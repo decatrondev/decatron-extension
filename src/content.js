@@ -73,12 +73,14 @@
   // ───────────── ciclo de vida por canal
   async function mount(login) {
     const info = await fetchPublic(login);
+    console.info("[decatron] canal", login, "→", info ? JSON.stringify(info) : "sin respuesta del servidor");
     if (!info || !info.enabled) { setBadge(login, null); return; }
 
     // El player puede tardar en montarse tras navegar; reintentar un rato.
     let p = null;
     for (let i = 0; i < 40 && !p; i++) { p = findPlayer(); if (!p) await sleep(250); }
-    if (!p) return;
+    if (!p) { console.warn("[decatron] no encontré el player de Twitch (video/controles)"); return; }
+    console.info("[decatron] botón montado en el player");
     if (current && current.login === login) return;
     if (current) unmount();
 
@@ -96,7 +98,7 @@
     ui.setState({ enabled: true, live: !!info.live, languages: info.languages || [], listeners: {} });
     setBadge(login, info);
 
-    ui.onselect = (lang) => select(lang, true);
+    ui.onselect = (lang) => { console.info("[decatron] idioma elegido:", lang); select(lang, true); };
     ui.onprefs = (patch) => savePrefs(patch);
 
     // Si el espectador ya eligió idioma en este canal (o tiene uno preferido), unirse solo.
@@ -241,6 +243,7 @@
 
   (async () => {
     await loadPrefs();
+    console.info(`[decatron] Decatron Translate ${chrome.runtime.getManifest().version} cargada`);
     onRoute();
     // Twitch navega con pushState y el content script vive en un mundo aislado (no
     // puede interceptar el history de la página), así que se vigila la URL.

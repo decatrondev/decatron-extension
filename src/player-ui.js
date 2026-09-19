@@ -30,7 +30,7 @@
       this.button = el("button", "dct-btn");
       this.button.setAttribute("aria-label", "Escuchar en otro idioma");
       this.button.innerHTML = `<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm5.9 7h-2.6a12.8 12.8 0 0 0-1.1-4.3A6 6 0 0 1 15.9 9ZM10 4c.9 1.1 1.6 2.9 1.8 5H8.2C8.4 6.9 9.1 5.1 10 4ZM4.1 11h2.6c.1 1.6.5 3 1.1 4.3A6 6 0 0 1 4.1 11Zm2.6-2H4.1a6 6 0 0 1 3.7-4.3C7.2 6 6.8 7.4 6.7 9ZM10 16c-.9-1.1-1.6-2.9-1.8-5h3.6c-.2 2.1-.9 3.9-1.8 5Zm2.2-.7c.6-1.3 1-2.7 1.1-4.3h2.6a6 6 0 0 1-3.7 4.3Z"/></svg><span class="dct-dot"></span>`;
-      this.button.addEventListener("click", (e) => { e.stopPropagation(); this.toggleMenu(); });
+      this.button.addEventListener("click", (e) => { e.stopPropagation(); console.info("[decatron] clic en el botón; menú montado:", document.contains(this.menu)); this.toggleMenu(); });
       const settings = controlsGroup.querySelector('button[data-a-target="player-settings-button"]');
       const wrap = el("div", "dct-btn-wrap");
       wrap.appendChild(this.button);
