@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>anthonydeca - Twitch</title>
+<style>body{margin:0;background:#0e0e10;font-family:Inter,system-ui,sans-serif;color:#efeff1}
+.video-player{position:relative;width:960px;height:540px;margin:20px auto;background:#000}
+.video-player__container{position:absolute;inset:0}
+video{width:100%;height:100%}
+[data-a-target="player-controls"]{position:absolute;left:0;right:0;bottom:0;height:50px;background:linear-gradient(transparent,rgba(0,0,0,.8));display:flex;align-items:center;justify-content:space-between;padding:0 10px}
+.player-controls__right-control-group{display:flex;align-items:center;gap:4px}
+.player-controls__right-control-group button{width:30px;height:30px;background:transparent;border:0;color:#fff;cursor:pointer}
+</style></head><body>
+<div class="video-player"><div class="video-player__container">
+<video id="v" src="fake-stream.webm" autoplay loop playsinline></video>
+<div data-a-target="player-controls">
+  <div class="player-controls__left-control-group"><button>▶</button></div>
+  <div class="player-controls__right-control-group">
+    <div><button data-a-target="player-settings-button" title="Ajustes">⚙</button></div>
+    <div><button title="Teatro">▭</button></div>
+    <div><button title="Pantalla completa">⛶</button></div>
+  </div>
+</div></div></div>
+<pre id="log" style="margin:10px auto;width:960px;font-size:12px;color:#aaa"></pre>
+</body></html>

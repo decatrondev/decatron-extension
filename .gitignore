@@ -1,0 +1,5 @@
+node_modules/
+test/profile*/
+test/fake-stream.webm
+test/*.png
+*.zip

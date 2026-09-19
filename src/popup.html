@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Decatron Translate</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/32.png" width="20" height="20" alt="">
+    <span class="brand">Decatron <span class="muted">Translate</span></span>
+  </header>
+
+  <section id="channel" class="card">
+    <div id="ch-title" class="title">Abre un canal de Twitch</div>
+    <div id="ch-sub" class="sub">Cuando el canal ofrezca traducción, aquí podrás elegir el idioma.</div>
+    <div id="langs" class="langs"></div>
+  </section>
+
+  <section class="card">
+    <div class="title small">Preferencias</div>
+    <label class="row">
+      <span>Unirme solo a mi idioma cuando el canal lo ofrezca</span>
+      <input type="checkbox" id="autoJoin">
+    </label>
+    <label class="row">
+      <span>Idioma preferido</span>
+      <select id="preferredLang">
+        <option value="">— ninguno —</option>
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="pt">Português</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="it">Italiano</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="ru">Русский</option>
+      </select>
+    </label>
+    <label class="col">
+      <span class="between"><span>Voz original de fondo</span><b id="bgv"></b></span>
+      <input type="range" id="backgroundVolume" min="0" max="60" step="1">
+    </label>
+    <label class="col">
+      <span class="between"><span>Retraso para cuadrar con el video</span><b id="dlv"></b></span>
+      <input type="range" id="delaySec" min="0" max="8" step="0.5">
+    </label>
+    <label class="row"><span>Subtítulos</span><input type="checkbox" id="captions"></label>
+    <label class="row"><span>Mostrar también lo que dijo</span><input type="checkbox" id="captionSource"></label>
+    <label class="col">
+      <span class="between"><span>Tamaño de subtítulos</span><b id="csv"></b></span>
+      <input type="range" id="captionSize" min="14" max="36" step="1">
+    </label>
+  </section>
+
+  <footer>
+    <a href="https://decatron.net/translate" target="_blank" rel="noreferrer">¿Eres streamer? Ofrece tu stream en otros idiomas</a>
+  </footer>
+  <script src="popup.js"></script>
+</body>
+</html>

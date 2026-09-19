@@ -1,0 +1,15 @@
+{
+  "name": "decatron-translate-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Extensión de Chrome: escucha un stream de Twitch en tu idioma con Decatron Translate",
+  "type": "module",
+  "scripts": {
+    "test:video": "ffmpeg -y -loglevel error -f lavfi -i testsrc=size=640x360:rate=15 -f lavfi -i sine=frequency=330:sample_rate=44100 -t 120 -c:v libvpx -b:v 300k -c:a libopus test/fake-stream.webm",
+    "test:e2e": "node test/e2e.mjs",
+    "pack": "cd src && zip -r ../decatron-translate.zip . -x '*.DS_Store'"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}

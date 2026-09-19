@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Decatron Translate",
+  "version": "0.1.0",
+  "description": "Escucha tu stream favorito de Twitch en tu idioma. Solo tú lo oyes: el canal y el resto del chat no cambian.",
+  "default_locale": "es",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.twitch.tv/*", "https://decatron.net/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png" },
+    "default_title": "Decatron Translate"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.twitch.tv/*"],
+      "js": ["signalr-lite.js", "audio.js", "player-ui.js", "content.js"],
+      "css": ["player.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
