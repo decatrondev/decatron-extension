@@ -55,6 +55,32 @@
 
     get isBlocked() { return !!this.ctx && this.ctx.state !== "running"; }
 
+    /**
+     * Llamar dentro de un clic del usuario. Reanuda el AudioContext y reproduce un
+     * <audio> silencioso: con eso la pestaña queda autorizada para sonar aunque el
+     * navegador tuviera bloqueado el autoplay para twitch.tv. Devuelve null si todo
+     * quedó bien o el nombre del error para mostrarlo.
+     */
+    async unlock() {
+      let err = null;
+      const ok = await this.ensureContext();
+      if (!ok) {
+        try {
+          // 0,1 s de silencio WAV, suficiente para pedir permiso de reproducción.
+          const a = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=");
+          await a.play();
+          this.useElement = true;
+          console.info("[decatron] <audio> autorizado; se usará esa vía");
+        } catch (e) {
+          err = (e && e.name) || "error";
+          console.warn("[decatron] desbloqueo falló:", err, e && e.message);
+        }
+      }
+      this.onaudioblocked && this.onaudioblocked(!ok && !!err, err);
+      if (this.queue.length) (this.useElement ? this._pumpElement() : this._pump());
+      return err;
+    }
+
     setOutputVolume(v) { if (this.gain) this.gain.gain.value = v; this._outVol = v; }
 
     start(meta) { this.chunks.set(meta.seq, { parts: [], meta }); }
@@ -164,7 +190,7 @@
           this.onsegment && this.onsegment(item.meta, a.duration || (item.meta.text || "").length / 14);
         }).catch((e) => {
           console.warn("[decatron] <audio>.play falló:", e && e.name, e && e.message);
-          this.onaudioblocked && this.onaudioblocked(true);
+          this.onaudioblocked && this.onaudioblocked(true, e && e.name);
           this._showOnly(item.meta);
           finish();
         });

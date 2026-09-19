@@ -90,8 +90,8 @@
     player.backgroundVolume = prefs.backgroundVolume;
     player.delaySec = prefs.delaySec;
     player.onsegment = (meta, dur) => ui.showCaption(meta, dur);
-    player.onaudioblocked = (b) => ui.setAudioBlocked(b);
-    ui.onunlock = () => player.ensureContext();
+    player.onaudioblocked = (b, reason) => ui.setAudioBlocked(b, reason);
+    ui.onunlock = () => player.unlock();
     p.video.addEventListener("volumechange", () => player.noteUserVolume());
 
     current = { login, ui, player, hub: null, selected: null, info, pollTimer: null, video: p.video, controls: p.controls };

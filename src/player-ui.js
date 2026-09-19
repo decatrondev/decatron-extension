@@ -49,9 +49,13 @@
       // Aviso de audio bloqueado (Chrome exige un gesto para sonar)
       this.toast = el("div", "dct-toast");
       this.toast.hidden = true;
-      this.toast.append(el("span", null, "Chrome bloqueó el audio de la traducción."));
+      this.toastText = el("span", null, "Chrome bloqueó el audio de la traducción.");
+      this.toast.append(this.toastText);
       const unlockBtn = el("button", "dct-toast-btn", "Activar audio");
-      unlockBtn.addEventListener("click", (e) => { e.stopPropagation(); this.onunlock && this.onunlock(); this.toast.hidden = true; });
+      const onUnlock = (e) => { e.stopPropagation(); e.preventDefault(); console.info("[decatron] clic en Activar audio"); this.onunlock && this.onunlock(); };
+      unlockBtn.addEventListener("click", onUnlock);
+      unlockBtn.addEventListener("pointerup", (e) => e.stopPropagation());
+      unlockBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
       this.toast.append(unlockBtn);
       playerRoot.appendChild(this.toast);
       this.onunlock = null;
@@ -70,7 +74,11 @@
 
     setState(patch) { Object.assign(this.state, patch); this.render(); }
 
-    setAudioBlocked(blocked) { if (blocked) this.ensureMounted(); this.toast.hidden = !blocked || !this.state.selected; }
+    setAudioBlocked(blocked, reason) {
+      if (blocked) this.ensureMounted();
+      this.toastText.textContent = reason ? `Chrome no deja reproducir el audio (${reason}).` : "Chrome bloqueó el audio de la traducción.";
+      this.toast.hidden = !blocked || !this.state.selected;
+    }
 
     /** Twitch vuelve a crear el contenedor del player: si nuestros nodos quedaron en el viejo, moverlos al nuevo. */
     ensureMounted() {
