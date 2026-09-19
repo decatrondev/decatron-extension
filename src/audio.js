@@ -20,7 +20,7 @@
       // poco y, pasado un límite, se descartan las frases más viejas (quedan como
       // subtítulo). Mejor perder una frase que ir un minuto detrás del video.
       this.maxBacklogSec = 6;
-      this.speedUpAboveSec = 2.5;
+      this.speedUpAboveSec = 1.5;
       this.fastRate = 1.15;
       this.stats = { played: 0, dropped: 0, lastDelay: 0 };
       this.userVolume = video ? video.volume : 1;
