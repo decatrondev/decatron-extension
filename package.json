@@ -7,7 +7,7 @@
   "scripts": {
     "test:video": "ffmpeg -y -loglevel error -f lavfi -i testsrc=size=640x360:rate=15 -f lavfi -i sine=frequency=330:sample_rate=44100 -t 120 -c:v libvpx -b:v 300k -c:a libopus test/fake-stream.webm",
     "test:e2e": "node test/e2e.mjs",
-    "pack": "cd src && zip -r ../decatron-translate.zip . -x '*.DS_Store'"
+    "pack": "node -e \"const {execSync}=require('child_process');const fs=require('fs');const v=JSON.parse(fs.readFileSync('src/manifest.json')).version;try{execSync('cd src && zip -qr ../decatron-translate-'+v+'.zip . -x \\\"*.DS_Store\\\"')}catch{execSync('python3 -c \\\"import shutil;shutil.make_archive(\\'decatron-translate-'+v+'\\',\\'zip\\',\\'src\\')\\\"')}console.log('decatron-translate-'+v+'.zip')\""
   },
   "devDependencies": {
     "playwright-core": "^1.63.0"
