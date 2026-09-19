@@ -18,6 +18,7 @@
       this.delaySec = 0;        // retraso extra para cuadrar con el video
       this.userVolume = video ? video.volume : 1;
       this.onsegment = null;    // (meta|null, durationSec) → subtítulos
+      this.onaudioblocked = null; // (bool) el navegador no deja sonar hasta un gesto del usuario
       this._ducked = false;
       this._rampTimer = null;
       this._muted = false;
@@ -28,9 +29,24 @@
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         this.gain = this.ctx.createGain();
         this.gain.connect(this.ctx.destination);
+        this.ctx.onstatechange = () => {
+          const running = this.ctx && this.ctx.state === "running";
+          this.onaudioblocked && this.onaudioblocked(!running);
+          if (running) this._pump();
+        };
+        // Chrome solo deja sonar un AudioContext creado/reanudado tras un gesto del
+        // usuario. Si la extensión se unió sola (idioma recordado), cualquier clic o
+        // tecla en la página sirve para desbloquearlo.
+        const unlock = () => { if (this.ctx && this.ctx.state !== "running") this.ctx.resume().catch(() => {}); };
+        for (const ev of ["pointerdown", "keydown", "touchstart"]) document.addEventListener(ev, unlock, { capture: true, passive: true });
+        this._unlock = unlock;
       }
-      if (this.ctx.state === "suspended") { try { await this.ctx.resume(); } catch {} }
+      if (this.ctx.state !== "running") { try { await this.ctx.resume(); } catch {} }
+      this.onaudioblocked && this.onaudioblocked(this.ctx.state !== "running");
+      return this.ctx.state === "running";
     }
+
+    get isBlocked() { return !!this.ctx && this.ctx.state !== "running"; }
 
     setOutputVolume(v) { if (this.gain) this.gain.gain.value = v; this._outVol = v; }
 
@@ -77,6 +93,13 @@
 
     _pump() {
       if (this.playing || this.queue.length === 0) return;
+      if (!this.ctx || this.ctx.state !== "running") {
+        // Sin audio desbloqueado no se encola nada: se muestra el subtítulo y se avisa.
+        const item = this.queue.shift();
+        this.onaudioblocked && this.onaudioblocked(true);
+        this._showOnly(item.meta);
+        return;
+      }
       const item = this.queue.shift();
       this.playing = item;
       const src = this.ctx.createBufferSource();
@@ -137,6 +160,7 @@
 
     destroy() {
       this.stop();
+      if (this._unlock) for (const ev of ["pointerdown", "keydown", "touchstart"]) document.removeEventListener(ev, this._unlock, { capture: true });
       if (this.ctx) { try { this.ctx.close(); } catch {} this.ctx = null; }
     }
   }

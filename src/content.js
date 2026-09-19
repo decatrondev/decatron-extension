@@ -87,6 +87,8 @@
     player.backgroundVolume = prefs.backgroundVolume;
     player.delaySec = prefs.delaySec;
     player.onsegment = (meta, dur) => ui.showCaption(meta, dur);
+    player.onaudioblocked = (b) => ui.setAudioBlocked(b);
+    ui.onunlock = () => player.ensureContext();
     p.video.addEventListener("volumechange", () => player.noteUserVolume());
 
     current = { login, ui, player, hub: null, selected: null, info, pollTimer: null, video: p.video, controls: p.controls };
@@ -136,8 +138,9 @@
     if (current.selected === lang && current.hub) return;
     current.selected = lang;
     current.ui.setState({ selected: lang, connection: "connecting" });
-    // El clic del usuario habilita el audio; sin gesto Chrome bloquea el AudioContext.
-    if (byUser) await current.player.ensureContext();
+    // El clic del usuario habilita el audio; sin gesto Chrome bloquea el AudioContext y
+    // ensureContext lo reporta para mostrar el aviso de "Activar audio".
+    await current.player.ensureContext();
     await joinHub(lang);
   }
 
@@ -176,6 +179,7 @@
 
   function leave() {
     if (!current) return;
+    current.ui.setAudioBlocked(false);
     if (current.hub) { try { current.hub.send("Leave"); } catch {} current.hub.close(); current.hub = null; }
     current.player.stop();
     current.selected = null;

@@ -87,3 +87,19 @@
 
 /* En pantalla completa el player crece; el menú y el botón heredan bien. En teatro
    la barra de controles queda igual. Nada especial que hacer. */
+
+/* Aviso de audio bloqueado por el navegador */
+.dct-toast {
+  position: absolute; right: 16px; top: 16px; z-index: 6001;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 8px;
+  background: #18181b; color: #efeff1; border: 1px solid #2f2f35;
+  box-shadow: 0 8px 28px rgba(0,0,0,.45); font-family: inherit; font-size: 13px;
+  transform: translateZ(0);
+}
+.dct-toast-btn {
+  padding: 6px 10px; border: 0; border-radius: 6px; cursor: pointer;
+  background: #9146ff; color: #fff; font: inherit; font-weight: 600;
+}
+.dct-toast-btn:hover { background: #a970ff; }
+.dct-toast-btn:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }

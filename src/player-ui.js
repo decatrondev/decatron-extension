@@ -44,6 +44,16 @@
       document.addEventListener("click", this._outside = () => this.closeMenu());
       document.addEventListener("keydown", this._esc = (e) => { if (e.key === "Escape") this.closeMenu(); });
 
+      // Aviso de audio bloqueado (Chrome exige un gesto para sonar)
+      this.toast = el("div", "dct-toast");
+      this.toast.hidden = true;
+      this.toast.append(el("span", null, "Chrome bloqueó el audio de la traducción."));
+      const unlockBtn = el("button", "dct-toast-btn", "Activar audio");
+      unlockBtn.addEventListener("click", (e) => { e.stopPropagation(); this.onunlock && this.onunlock(); });
+      this.toast.append(unlockBtn);
+      playerRoot.appendChild(this.toast);
+      this.onunlock = null;
+
       // Subtítulos
       this.captions = el("div", "dct-captions");
       this.captions.hidden = true;
@@ -57,6 +67,8 @@
     }
 
     setState(patch) { Object.assign(this.state, patch); this.render(); }
+
+    setAudioBlocked(blocked) { this.toast.hidden = !blocked || !this.state.selected; }
 
     toggleMenu() { this.menu.hidden ? this.openMenu() : this.closeMenu(); }
     openMenu() { this.renderMenu(); this.menu.hidden = false; this.button.classList.add("dct-open"); this.onopen && this.onopen(); }
@@ -169,7 +181,7 @@
     destroy() {
       document.removeEventListener("click", this._outside);
       document.removeEventListener("keydown", this._esc);
-      this.wrap.remove(); this.menu.remove(); this.captions.remove();
+      this.wrap.remove(); this.menu.remove(); this.captions.remove(); this.toast.remove();
     }
   }
 
