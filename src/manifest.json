@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Decatron Translate",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Escucha tu stream favorito de Twitch en tu idioma. Solo tú lo oyes: el canal y el resto del chat no cambian.",
   "default_locale": "es",
   "icons": {

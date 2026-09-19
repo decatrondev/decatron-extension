@@ -179,6 +179,7 @@
       if (this._rampTimer) { clearTimeout(this._rampTimer); this._rampTimer = null; }
       src.start(when);
       this._current = src;
+      this.onaudioblocked && this.onaudioblocked(false); // está sonando de verdad: sin aviso
       const waited = item.arrivedAt ? (performance.now() - item.arrivedAt) / 1000 : 0;
       const sinceStt = item.meta.sttAt ? (Date.now() - new Date(item.meta.sttAt).getTime()) / 1000 : null;
       this.stats.played++; this.stats.lastDelay = sinceStt;
