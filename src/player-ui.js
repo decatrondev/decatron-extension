@@ -75,7 +75,7 @@
     setState(patch) { Object.assign(this.state, patch); this.render(); }
 
     setAudioBlocked(blocked, reason) {
-      if (blocked) this.ensureMounted();
+      if (blocked) { this.ensureMounted(); console.info("[decatron] aviso de audio bloqueado:", reason || "sin motivo", new Error().stack.split("\n").slice(2, 5).join(" ← ")); }
       this.toastText.textContent = reason ? `Chrome no deja reproducir el audio (${reason}).` : "Chrome bloqueó el audio de la traducción.";
       this.toast.hidden = !blocked || !this.state.selected;
     }

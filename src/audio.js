@@ -37,9 +37,12 @@
         this.gain = this.ctx.createGain();
         this.gain.connect(this.ctx.destination);
         this.ctx.onstatechange = () => {
-          const running = this.ctx && this.ctx.state === "running";
-          this.onaudioblocked && this.onaudioblocked(!running);
-          if (running) this._pump();
+          if (!this.ctx) return;
+          const st = this.ctx.state;
+          console.info("[decatron] AudioContext cambió a:", st);
+          if (st === "closed") return;                 // lo cerramos nosotros al desmontar
+          this.onaudioblocked && this.onaudioblocked(st !== "running", st !== "running" ? "estado " + st : undefined);
+          if (st === "running") this._pump();
         };
         // Chrome solo deja sonar un AudioContext creado/reanudado tras un gesto del
         // usuario. Si la extensión se unió sola (idioma recordado), cualquier clic o
