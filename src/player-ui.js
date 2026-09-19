@@ -19,6 +19,8 @@
      */
     constructor(playerRoot, controlsGroup, prefs) {
       this.prefs = prefs;
+      this.root = playerRoot;
+      this.rootProvider = null;  // () => contenedor actual del player; Twitch lo reemplaza al re-renderizar
       this.onselect = null;      // (lang|null)
       this.onprefs = null;       // (prefs parciales)
       this.onopen = null;        // el menú se abrió (refrescar oyentes)
@@ -68,11 +70,21 @@
 
     setState(patch) { Object.assign(this.state, patch); this.render(); }
 
-    setAudioBlocked(blocked) { this.toast.hidden = !blocked || !this.state.selected; }
+    setAudioBlocked(blocked) { if (blocked) this.ensureMounted(); this.toast.hidden = !blocked || !this.state.selected; }
+
+    /** Twitch vuelve a crear el contenedor del player: si nuestros nodos quedaron en el viejo, moverlos al nuevo. */
+    ensureMounted() {
+      const fresh = this.rootProvider && this.rootProvider();
+      if (fresh && fresh !== this.root) this.root = fresh;
+      if (!this.root || !document.contains(this.root)) return false;
+      for (const n of [this.menu, this.toast, this.captions])
+        if (!this.root.contains(n)) this.root.appendChild(n);
+      return true;
+    }
 
     toggleMenu() { this.menu.hidden ? this.openMenu() : this.closeMenu(); }
-    openMenu() { this.renderMenu(); this.menu.hidden = false; this.button.classList.add("dct-open"); this.onopen && this.onopen(); }
-    closeMenu() { this.menu.hidden = true; this.button.classList.remove("dct-open"); }
+    openMenu() { this.ensureMounted(); this.renderMenu(); this.menu.hidden = false; this.button.classList.add("dct-open"); this._toastWasVisible = !this.toast.hidden; this.toast.hidden = true; this.onopen && this.onopen(); }
+    closeMenu() { if (this.menu.hidden) return; this.menu.hidden = true; this.button.classList.remove("dct-open"); if (this._toastWasVisible && this.state.selected) this.toast.hidden = false; }
 
     render() {
       const s = this.state;
@@ -80,6 +92,7 @@
       this.button.classList.toggle("dct-active", !!s.selected);
       this.button.classList.toggle("dct-live", s.live);
       this.button.title = s.selected ? `Escuchando en ${langName(s.selected)}` : (s.live ? "Este canal se puede escuchar en otro idioma" : "Traducción disponible cuando el streamer la active");
+      if (!s.selected) this.toast.hidden = true;
       if (!this.menu.hidden) this.renderMenu();
     }
 
@@ -160,6 +173,7 @@
     showCaption(meta, durationSec) {
       if (this._capTimer) { clearInterval(this._capTimer); this._capTimer = null; }
       if (!meta || !this.prefs.captions) { this.captions.hidden = true; return; }
+      this.ensureMounted();
       this.captionSource.textContent = meta.source || "";
       const words = (meta.text || "").split(/\s+/).filter(Boolean);
       this.captionText.textContent = "";

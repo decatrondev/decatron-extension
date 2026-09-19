@@ -83,6 +83,7 @@
     if (current) unmount();
 
     const ui = new window.__decatronPlayerUi(p.root, p.controls, prefs);
+    ui.rootProvider = () => { const q = findPlayer(); return q ? q.root : null; };
     const player = new window.__decatronPlayer(p.video);
     player.backgroundVolume = prefs.backgroundVolume;
     player.delaySec = prefs.delaySec;
@@ -115,7 +116,14 @@
       if (!current) return;
       if (!document.contains(current.ui.wrap)) {
         const p2 = findPlayer();
-        if (p2) { p2.controls.insertBefore(current.ui.wrap, p2.controls.firstChild); }
+        if (p2) {
+          const settings = p2.controls.querySelector('button[data-a-target="player-settings-button"]');
+          if (settings && settings.parentElement && settings.parentElement.parentElement === p2.controls) p2.controls.insertBefore(current.ui.wrap, settings.parentElement);
+          else p2.controls.insertBefore(current.ui.wrap, p2.controls.firstChild);
+          current.ui.ensureMounted();
+          // El <video> también puede ser otro: el ducking tiene que apuntar al vigente.
+          if (p2.video !== current.player.video) { current.player.video = p2.video; p2.video.addEventListener("volumechange", () => current && current.player.noteUserVolume()); }
+        }
       }
     });
     current.observer.observe(document.body, { childList: true, subtree: true });
