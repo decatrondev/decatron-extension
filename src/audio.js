@@ -16,6 +16,13 @@
       this.chunks = new Map();  // seq -> { parts: [], meta }
       this.backgroundVolume = 0.15;
       this.delaySec = 0;        // retraso extra para cuadrar con el video
+      // Control de atraso: si la cola crece (el streamer habla seguido) se acelera un
+      // poco y, pasado un límite, se descartan las frases más viejas (quedan como
+      // subtítulo). Mejor perder una frase que ir un minuto detrás del video.
+      this.maxBacklogSec = 6;
+      this.speedUpAboveSec = 2.5;
+      this.fastRate = 1.15;
+      this.stats = { played: 0, dropped: 0, lastDelay: 0 };
       this.userVolume = video ? video.volume : 1;
       this.onsegment = null;    // (meta|null, durationSec) → subtítulos
       this.onaudioblocked = null; // (bool) el navegador no deja sonar hasta un gesto del usuario
@@ -118,12 +125,24 @@
       try { buffer = await this.ctx.decodeAudioData(joined.buffer); }
       catch (err) { console.info("[decatron] decodeAudioData falló:", err && err.message, "bytes:", total); this._showOnly(e.meta); return; }
       console.info(`[decatron] seg ${seq}: ${total} bytes → ${buffer.duration.toFixed(2)}s de audio; ctx=${this.ctx.state}; en cola=${this.queue.length}; reproduciendo=${this.playing ? this.playing.seq : "-"}`);
-      this.queue.push({ seq, buffer, meta: e.meta });
+      this.queue.push({ seq, buffer, meta: e.meta, arrivedAt: performance.now() });
       this.queue.sort((a, b) => a.seq - b.seq);
+      this._trimBacklog();
       this._pump();
     }
 
     dropped(seq) { this.chunks.delete(seq); this.queue = this.queue.filter(q => q.seq !== seq); }
+
+    _backlogSec() { return this.queue.reduce((n, q) => n + (q.buffer ? q.buffer.duration : 2), 0); }
+
+    _trimBacklog() {
+      while (this.queue.length > 1 && this._backlogSec() > this.maxBacklogSec) {
+        const old = this.queue.shift();
+        this.stats.dropped++;
+        console.info(`[decatron] ✂ seg ${old.seq} descartado por atraso (cola ${this._backlogSec().toFixed(1)}s)`);
+        this.onsegment && this.onsegment(old.meta, 0.8);
+      }
+    }
 
     _showOnly(meta) {
       const secs = Math.min(6, Math.max(1.5, (meta.text || "").length / 14));
@@ -139,6 +158,8 @@
       this.playing = item;
       const src = this.ctx.createBufferSource();
       src.buffer = item.buffer;
+      const backlog = this._backlogSec();
+      src.playbackRate.value = backlog > this.speedUpAboveSec ? this.fastRate : 1;
       src.connect(this.gain);
       const when = this.ctx.currentTime + Math.max(0, this.delaySec);
       const startInMs = Math.max(0, this.delaySec) * 1000;
@@ -158,8 +179,11 @@
       if (this._rampTimer) { clearTimeout(this._rampTimer); this._rampTimer = null; }
       src.start(when);
       this._current = src;
-      console.info(`[decatron] ▶ seg ${item.seq} (${item.buffer.duration.toFixed(2)}s) ctx=${this.ctx.state} gain=${this.gain.gain.value} video.volume=${this.video ? this.video.volume.toFixed(2) : "-"} video.muted=${this.video ? this.video.muted : "-"}`);
-      src.addEventListener("ended", () => console.info(`[decatron] ■ seg ${item.seq} terminó`));
+      const waited = item.arrivedAt ? (performance.now() - item.arrivedAt) / 1000 : 0;
+      const sinceStt = item.meta.sttAt ? (Date.now() - new Date(item.meta.sttAt).getTime()) / 1000 : null;
+      this.stats.played++; this.stats.lastDelay = sinceStt;
+      console.info(`[decatron] ▶ seg ${item.seq} (${item.buffer.duration.toFixed(2)}s, x${src.playbackRate.value}) esperó en cola ${waited.toFixed(1)}s; desde fin de frase en servidor ${sinceStt == null ? "n/d" : sinceStt.toFixed(1) + "s"}; cola restante ${backlog.toFixed(1)}s`);
+
     }
 
     // Vía alternativa: un <audio> por segmento. Misma cola, mismo ducking. Se usa cuando
