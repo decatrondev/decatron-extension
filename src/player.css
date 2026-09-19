@@ -88,6 +88,9 @@
 /* En pantalla completa el player crece; el menú y el botón heredan bien. En teatro
    la barra de controles queda igual. Nada especial que hacer. */
 
+/* El atributo hidden pierde contra cualquier display: propio; se reafirma. */
+.dct-toast[hidden], .dct-menu[hidden], .dct-captions[hidden], .dct-btn-wrap[hidden] { display: none !important; }
+
 /* Aviso de audio bloqueado por el navegador */
 .dct-toast {
   position: absolute; right: 16px; top: 16px; z-index: 6001;
