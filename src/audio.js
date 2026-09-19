@@ -41,9 +41,16 @@
         for (const ev of ["pointerdown", "keydown", "touchstart"]) document.addEventListener(ev, unlock, { capture: true, passive: true });
         this._unlock = unlock;
       }
-      if (this.ctx.state !== "running") { try { await this.ctx.resume(); } catch {} }
-      this.onaudioblocked && this.onaudioblocked(this.ctx.state !== "running");
-      return this.ctx.state === "running";
+      if (this.ctx.state !== "running") {
+        try { await this.ctx.resume(); }
+        catch (e) { console.warn("[decatron] AudioContext.resume falló:", e && e.name, e && e.message); }
+        console.info("[decatron] AudioContext:", this.ctx.state);
+      }
+      const running = this.ctx.state === "running";
+      // Si Web Audio no arranca se reproduce con <audio>; el aviso solo si eso también falla.
+      this.useElement = !running;
+      if (running) this.onaudioblocked && this.onaudioblocked(false);
+      return running;
     }
 
     get isBlocked() { return !!this.ctx && this.ctx.state !== "running"; }
@@ -70,14 +77,20 @@
         this._showOnly(e.meta);
         return;
       }
-      await this.ensureContext();
+      const running = await this.ensureContext();
       const total = e.parts.reduce((n, p) => n + p.length, 0);
       const joined = new Uint8Array(total);
       let off = 0;
       for (const p of e.parts) { joined.set(p, off); off += p.length; }
+      if (!running) {
+        this.queue.push({ seq, blob: new Blob([joined], { type: "audio/mpeg" }), meta: e.meta });
+        this.queue.sort((a, b) => a.seq - b.seq);
+        this._pumpElement();
+        return;
+      }
       let buffer;
       try { buffer = await this.ctx.decodeAudioData(joined.buffer); }
-      catch { this._showOnly(e.meta); return; }
+      catch (err) { console.warn("[decatron] decodeAudioData falló:", err && err.message); this._showOnly(e.meta); return; }
       this.queue.push({ seq, buffer, meta: e.meta });
       this.queue.sort((a, b) => a.seq - b.seq);
       this._pump();
@@ -93,13 +106,8 @@
 
     _pump() {
       if (this.playing || this.queue.length === 0) return;
-      if (!this.ctx || this.ctx.state !== "running") {
-        // Sin audio desbloqueado no se encola nada: se muestra el subtítulo y se avisa.
-        const item = this.queue.shift();
-        this.onaudioblocked && this.onaudioblocked(true);
-        this._showOnly(item.meta);
-        return;
-      }
+      if (!this.ctx || this.ctx.state !== "running") { this._pumpElement(); return; }
+      if (this.queue[0].blob) { this._pumpElement(); return; }
       const item = this.queue.shift();
       this.playing = item;
       const src = this.ctx.createBufferSource();
@@ -123,6 +131,46 @@
       if (this._rampTimer) { clearTimeout(this._rampTimer); this._rampTimer = null; }
       src.start(when);
       this._current = src;
+    }
+
+    // Vía alternativa: un <audio> por segmento. Misma cola, mismo ducking. Se usa cuando
+    // el AudioContext no arranca (política de autoplay) — el elemento sí suele poder.
+    _pumpElement() {
+      if (this.playing || this.queue.length === 0) return;
+      const item = this.queue.shift();
+      if (!item.blob) {
+        // Venía decodificado para Web Audio; sin contexto no se puede usar. Subtítulo y seguir.
+        this._showOnly(item.meta);
+        return;
+      }
+      this.playing = item;
+      const url = URL.createObjectURL(item.blob);
+      const a = new Audio(url);
+      a.preload = "auto";
+      this._currentEl = a;
+      const finish = () => {
+        URL.revokeObjectURL(url);
+        if (this.playing === item) this.playing = null;
+        if (this.queue.length === 0) {
+          this._rampTimer = setTimeout(() => { if (!this.playing && this.queue.length === 0) { this._duck(false); this.onsegment && this.onsegment(null, 0); } }, 400);
+        } else this._pumpElement();
+      };
+      a.onended = finish;
+      a.onerror = () => { console.warn("[decatron] <audio> error", a.error && a.error.code); finish(); };
+      const go = () => {
+        a.play().then(() => {
+          this.onaudioblocked && this.onaudioblocked(false);
+          this._duck(true);
+          this.onsegment && this.onsegment(item.meta, a.duration || (item.meta.text || "").length / 14);
+        }).catch((e) => {
+          console.warn("[decatron] <audio>.play falló:", e && e.name, e && e.message);
+          this.onaudioblocked && this.onaudioblocked(true);
+          this._showOnly(item.meta);
+          finish();
+        });
+      };
+      if (this.delaySec > 0) setTimeout(go, this.delaySec * 1000); else go();
+      if (this._rampTimer) { clearTimeout(this._rampTimer); this._rampTimer = null; }
     }
 
     _duck(on) {
@@ -153,6 +201,7 @@
       this.queue = [];
       this.chunks.clear();
       try { this._current && this._current.stop(); } catch {}
+      try { if (this._currentEl) { this._currentEl.pause(); this._currentEl.src = ""; } } catch {}
       this.playing = null;
       if (this._ducked) this._duck(false);
       this.onsegment && this.onsegment(null, 0);

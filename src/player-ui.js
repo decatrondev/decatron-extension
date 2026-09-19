@@ -49,7 +49,7 @@
       this.toast.hidden = true;
       this.toast.append(el("span", null, "Chrome bloqueó el audio de la traducción."));
       const unlockBtn = el("button", "dct-toast-btn", "Activar audio");
-      unlockBtn.addEventListener("click", (e) => { e.stopPropagation(); this.onunlock && this.onunlock(); });
+      unlockBtn.addEventListener("click", (e) => { e.stopPropagation(); this.onunlock && this.onunlock(); this.toast.hidden = true; });
       this.toast.append(unlockBtn);
       playerRoot.appendChild(this.toast);
       this.onunlock = null;
