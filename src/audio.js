@@ -187,7 +187,8 @@
       const sinceStt = item.meta.sttAt ? (Date.now() - new Date(item.meta.sttAt).getTime()) / 1000 : null;
       this.stats.played++; this.stats.lastDelay = sinceStt;
       const sttLag = item.meta.sttLag;
-      console.info(`[decatron] ▶ seg ${item.seq} (${item.buffer.duration.toFixed(2)}s, x${src.playbackRate.value}) STT cerró la frase ${sttLag == null ? "n/d" : sttLag.toFixed(1) + "s"} después de callar; servidor→aquí ${sinceStt == null ? "n/d" : sinceStt.toFixed(1) + "s"}; esperó en cola ${waited.toFixed(1)}s; cola restante ${backlog.toFixed(1)}s`);
+      const streamLag = item.meta.streamLag;
+      console.info(`[decatron] ▶ seg ${item.seq} (${item.buffer.duration.toFixed(2)}s, x${src.playbackRate.value}) app→servidor atraso ${streamLag == null ? "n/d" : streamLag.toFixed(1) + "s"}; STT cerró ${sttLag == null ? "n/d" : sttLag.toFixed(1) + "s"} tras callar; servidor→aquí ${sinceStt == null ? "n/d" : sinceStt.toFixed(1) + "s"}; cola ${waited.toFixed(1)}s`);
 
     }
 
