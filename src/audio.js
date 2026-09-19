@@ -43,9 +43,9 @@
       }
       if (this.ctx.state !== "running") {
         try { await this.ctx.resume(); }
-        catch (e) { console.warn("[decatron] AudioContext.resume falló:", e && e.name, e && e.message); }
-        console.info("[decatron] AudioContext:", this.ctx.state);
+        catch (e) { console.info("[decatron] AudioContext.resume falló:", e && e.name, e && e.message); }
       }
+      console.info("[decatron] AudioContext:", this.ctx.state, "sampleRate", this.ctx.sampleRate, "sink", this.ctx.sinkId === undefined ? "n/d" : (this.ctx.sinkId || "default"));
       const running = this.ctx.state === "running";
       // Si Web Audio no arranca se reproduce con <audio>; el aviso solo si eso también falla.
       this.useElement = !running;
@@ -73,7 +73,7 @@
           console.info("[decatron] <audio> autorizado; se usará esa vía");
         } catch (e) {
           err = (e && e.name) || "error";
-          console.warn("[decatron] desbloqueo falló:", err, e && e.message);
+          console.info("[decatron] desbloqueo falló:", err, e && e.message);
         }
       }
       this.onaudioblocked && this.onaudioblocked(!ok && !!err, err);
@@ -116,7 +116,8 @@
       }
       let buffer;
       try { buffer = await this.ctx.decodeAudioData(joined.buffer); }
-      catch (err) { console.warn("[decatron] decodeAudioData falló:", err && err.message); this._showOnly(e.meta); return; }
+      catch (err) { console.info("[decatron] decodeAudioData falló:", err && err.message, "bytes:", total); this._showOnly(e.meta); return; }
+      console.info(`[decatron] seg ${seq}: ${total} bytes → ${buffer.duration.toFixed(2)}s de audio; ctx=${this.ctx.state}; en cola=${this.queue.length}; reproduciendo=${this.playing ? this.playing.seq : "-"}`);
       this.queue.push({ seq, buffer, meta: e.meta });
       this.queue.sort((a, b) => a.seq - b.seq);
       this._pump();
@@ -157,6 +158,8 @@
       if (this._rampTimer) { clearTimeout(this._rampTimer); this._rampTimer = null; }
       src.start(when);
       this._current = src;
+      console.info(`[decatron] ▶ seg ${item.seq} (${item.buffer.duration.toFixed(2)}s) ctx=${this.ctx.state} gain=${this.gain.gain.value} video.volume=${this.video ? this.video.volume.toFixed(2) : "-"} video.muted=${this.video ? this.video.muted : "-"}`);
+      src.addEventListener("ended", () => console.info(`[decatron] ■ seg ${item.seq} terminó`));
     }
 
     // Vía alternativa: un <audio> por segmento. Misma cola, mismo ducking. Se usa cuando
@@ -189,7 +192,7 @@
           this._duck(true);
           this.onsegment && this.onsegment(item.meta, a.duration || (item.meta.text || "").length / 14);
         }).catch((e) => {
-          console.warn("[decatron] <audio>.play falló:", e && e.name, e && e.message);
+          console.info("[decatron] <audio>.play falló:", e && e.name, e && e.message);
           this.onaudioblocked && this.onaudioblocked(true, e && e.name);
           this._showOnly(item.meta);
           finish();
