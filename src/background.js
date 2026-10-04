@@ -25,7 +25,7 @@ async function channelId(login) {
 async function getEmotes(msg) {
   const login = String(msg.login || "").toLowerCase();
   if (!/^[a-z0-9_]{1,40}$/.test(login)) return { ok: false, error: "login" };
-  const providers = { own: !!msg.providers?.own, sevenTv: !!msg.providers?.sevenTv, bttv: !!msg.providers?.bttv, ffz: !!msg.providers?.ffz, globals: !!msg.providers?.globals };
+  const providers = { own: !!msg.providers?.own, decatronGlobal: !!msg.providers?.decatronGlobal, sevenTv: !!msg.providers?.sevenTv, bttv: !!msg.providers?.bttv, ffz: !!msg.providers?.ffz, globals: !!msg.providers?.globals };
   const res = await DctEmoteDict.buildDictionary({ login, providers, fetch: (u, i) => fetch(u, i), cache: msg.fresh ? freshCache : cache, channelId });
   // Todo falló y no hay nada que mostrar: se avisa como error para que se reintente al cambiar de canal
   if (res.entries.length === 0 && Object.keys(res.errors).length > 0) return { ok: false, error: "providers", errors: res.errors };

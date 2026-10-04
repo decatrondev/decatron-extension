@@ -17,7 +17,7 @@
     id: "emotes",
     order: 2,
     icon: SMILE,
-    defaults: { enabled: true, own: true, sevenTv: true, bttv: true, ffz: true, globals: true, other: "always", size: "normal", picker: true },
+    defaults: { enabled: true, own: true, decatronGlobal: true, sevenTv: true, bttv: true, ffz: true, globals: true, other: "always", size: "normal", picker: true },
     name: () => t("em.name"),
     description: () => t("em.desc"),
 
@@ -105,6 +105,7 @@
         statusBox, previewBox,
         kit.section(t("em.sources"),
           kit.toggleRow(t("em.own"), t("em.ownHint"), s0().own, (v) => set({ own: v })),
+          kit.toggleRow(t("em.decatronGlobal"), t("em.decatronGlobalHint"), s0().decatronGlobal !== false, (v) => set({ decatronGlobal: v })),
           kit.toggleRow(t("em.7tv"), null, s0().sevenTv, (v) => set({ sevenTv: v })),
           kit.toggleRow(t("em.bttv"), null, s0().bttv, (v) => set({ bttv: v })),
           kit.toggleRow(t("em.ffz"), null, s0().ffz, (v) => set({ ffz: v })),
@@ -125,7 +126,7 @@
   // ───────────── carga del diccionario
   function providerFlags() {
     const s = mod.settings();
-    return { own: s.own, sevenTv: s.sevenTv, bttv: s.bttv, ffz: s.ffz, globals: s.globals };
+    return { own: s.own, decatronGlobal: s.decatronGlobal !== false, sevenTv: s.sevenTv, bttv: s.bttv, ffz: s.ffz, globals: s.globals };
   }
 
   async function load(login, fresh) {
@@ -167,7 +168,7 @@
 
   /** Los emotes que hay que dibujar ahora: con otra extensión detectada (y en "auto"), solo los propios de Decatron */
   function effectiveEntries() {
-    if (mod.settings().other === "auto" && otherDetected()) return mod.entries.filter((e) => e.p === "own");
+    if (mod.settings().other === "auto" && otherDetected()) return mod.entries.filter((e) => e.p === "own" || e.p === "gdec");
     return mod.entries;
   }
 
@@ -215,7 +216,7 @@
   function replaceText(span, dict, ownOnly) {
     const text = span.textContent;
     if (!text || !/\S/.test(text)) return;
-    const usable = (e) => !!e && (!ownOnly || e.p === "own");
+    const usable = (e) => !!e && (!ownOnly || e.p === "own" || e.p === "gdec");
     const parts = text.split(/(\s+)/);
     if (!parts.some((p) => usable(dict.get(p)))) return;
 

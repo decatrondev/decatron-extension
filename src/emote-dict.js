@@ -20,9 +20,9 @@
   }
 
   // ── Propios de Decatron ───────────────────────────────────────────────────
-  function parseOwn(data) {
+  function parseOwn(data, provider) {
     const list = (data && data.emotes) || [];
-    return list.map((e) => ({ n: e.name, u: (e.urls && (e.urls.x2 || e.urls.x1)) || "", a: !!e.animated, z: !!e.zeroWidth, p: "own" })).filter((e) => e.n && e.u);
+    return list.map((e) => ({ n: e.name, u: (e.urls && (e.urls.x2 || e.urls.x1)) || "", a: !!e.animated, z: !!e.zeroWidth, p: provider || "own" })).filter((e) => e.n && e.u);
   }
 
   // ── 7TV ───────────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@
   /**
    * @param {object} o
    * @param {string} o.login
-   * @param {{own:boolean,sevenTv:boolean,bttv:boolean,ffz:boolean,globals:boolean}} o.providers
+   * @param {{own:boolean,decatronGlobal:boolean,sevenTv:boolean,bttv:boolean,ffz:boolean,globals:boolean}} o.providers
    * @param {typeof fetch} o.fetch
    * @param {{get:(k:string)=>Promise<any>,set:(k:string,v:any)=>Promise<void>}} [o.cache]
    * @param {(login:string)=>Promise<string|null>} [o.channelId] resolver (cacheada por quien llama)
@@ -124,6 +124,8 @@
 
     const J = (url) => getJson(fetchFn, url);
     const tasks = []; // de menos a más prioridad: lo último que se aplica gana
+    // Los globales de Decatron van primero: solo aparecen si el nombre no lo tomó nadie más
+    if (providers.decatronGlobal) tasks.push(layer("gdec", 60 * 1000, async () => parseOwn(await J(`${API}/api/public/global-emotes`), "gdec")));
     if (providers.globals) {
       if (providers.ffz) tasks.push(layer("ffz:global", TTL_GLOBAL, async () => parseFfz(await J("https://api.frankerfacez.com/v1/set/global"), true)));
       if (providers.bttv) tasks.push(layer("bttv:global", TTL_GLOBAL, async () => parseBttv(await J("https://api.betterttv.net/3/cached/emotes/global"))));

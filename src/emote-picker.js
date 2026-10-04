@@ -81,7 +81,7 @@
         const at = name.indexOf(q);
         if (at < 0) continue;
         // Primero los que empiezan igual, después los propios de Decatron, después por largo
-        scored.push({ e, score: (at === 0 ? 0 : 100) + (e.p === "own" ? 0 : 10) + e.n.length / 100 });
+        scored.push({ e, score: (at === 0 ? 0 : 100) + (e.p === "own" ? 0 : e.p === "gdec" ? 5 : 10) + e.n.length / 100 });
       }
       scored.sort((a, b) => a.score - b.score);
       this.items = scored.slice(0, MAX_ITEMS).map((s) => s.e);
