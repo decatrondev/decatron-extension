@@ -2,6 +2,7 @@
 // La URL se sirve como https://www.twitch.tv/anthonydeca mediante page.route (la extensión solo
 // se inyecta en ese host), y el backend es el real.
 import { chromium } from 'playwright-core';
+import os from 'node:os';
 // Requiere: npm i -D playwright-core y un Chromium (CHROME=/ruta/al/chrome o el de Playwright).
 // Genera antes el video falso: npm run test:video
 import path from 'node:path';
@@ -13,9 +14,9 @@ const html = fs.readFileSync(path.join(here, 'fake-twitch.html'));
 const webm = fs.readFileSync(path.join(here, 'fake-stream.webm'));
 const durationSec = Number(process.env.DURATION || 60);
 
-const ctx = await chromium.launchPersistentContext(path.join(here, 'profile'), {
+const ctx = await chromium.launchPersistentContext(path.join(here, 'profile-' + Date.now()), {
   headless: false,
-  executablePath: process.env.CHROME || undefined,
+  executablePath: process.env.CHROME || (() => { const root = path.join(os.homedir(), '.cache', 'ms-playwright'); const d = fs.readdirSync(root).find((x) => x.startsWith('chromium-')); return d ? path.join(root, d, 'chrome-linux64', 'chrome') : undefined; })(),
   args: ['--headless=new', `--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, '--autoplay-policy=no-user-gesture-required', '--no-sandbox'],
   viewport: { width: 1100, height: 700 },
 });
@@ -30,12 +31,15 @@ await page.goto('https://www.twitch.tv/anthonydeca');
 
 const btn = page.locator('.dct-btn');
 await btn.waitFor({ timeout: 20000 });
-console.log('✓ botón inyectado; hidden =', await page.locator('.dct-btn-wrap').evaluate(e => e.hidden));
+console.log('✓ botón inyectado');
 await btn.click();
-await page.locator('.dct-menu').waitFor();
-console.log('✓ menú:', (await page.locator('.dct-row-label').allTextContents()).join(' | '));
+await page.locator('.dialog').waitFor();
+console.log('✓ panel; pestañas:', (await page.locator('.nav-name').allTextContents()).join(' | '));
+await page.locator('.lang').first().waitFor({ timeout: 15000 });
+console.log('✓ traducción; idiomas:', (await page.locator('.lang').allTextContents()).join(' | '));
 await page.screenshot({ path: path.join(here, 'shot-menu.png') });
-await page.locator('.dct-row', { hasText: 'English' }).click();
+await page.locator('.lang', { hasText: 'English' }).click();
+await page.keyboard.press('Escape');
 await page.waitForTimeout(1500);
 console.log('✓ estado tras elegir English:', await page.evaluate(() => document.querySelector('.dct-btn').className));
 

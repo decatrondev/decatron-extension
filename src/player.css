@@ -1,4 +1,4 @@
-/* Decatron Translate — dentro del player de Twitch. Prefijo dct- en todo. */
+/* Decatron — dentro del player de Twitch (botón, subtítulos y aviso de audio). Prefijo dct- en todo. */
 
 .dct-btn-wrap { display: inline-flex; align-items: center; }
 .dct-btn {
@@ -18,48 +18,6 @@
 }
 .dct-btn.dct-active .dct-dot { opacity: 1; transform: scale(1); }
 .dct-btn.dct-live:not(.dct-active) .dct-dot { opacity: .7; transform: scale(.8); background: #22c55e; }
-
-/* Menú: mismo lenguaje que el de ajustes del player */
-.dct-menu {
-  position: absolute; right: 56px; bottom: 60px; z-index: 6000;
-  width: 300px; max-height: calc(100% - 80px); overflow: auto;
-  background: #18181b; color: #efeff1;
-  border: 1px solid #2f2f35; border-radius: 6px;
-  box-shadow: 0 8px 28px rgba(0,0,0,.45);
-  transform: translateZ(0); /* capa propia: siempre por encima del video */
-  font-family: inherit; font-size: 13px; line-height: 1.35;
-  animation: dct-in .12s ease-out;
-}
-@keyframes dct-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .dct-menu { animation: none; } }
-
-.dct-menu-head { padding: 12px 14px 8px; }
-.dct-menu-title { font-weight: 600; font-size: 14px; }
-.dct-menu-sub { color: #adadb8; margin-top: 4px; font-size: 12px; }
-
-.dct-list { padding: 4px 6px; border-top: 1px solid #26262c; border-bottom: 1px solid #26262c; }
-.dct-row {
-  display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px;
-  width: 100%; padding: 8px 8px; border: 0; border-radius: 4px;
-  background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;
-}
-.dct-row:hover { background: rgba(255,255,255,.08); }
-.dct-row:focus-visible { outline: 2px solid #a970ff; outline-offset: -2px; }
-.dct-row.dct-selected .dct-row-label { font-weight: 600; }
-.dct-check { color: #a970ff; font-size: 12px; text-align: center; }
-.dct-row-meta { color: #adadb8; font-size: 11px; }
-
-.dct-opts { padding: 8px 14px 4px; display: grid; gap: 10px; }
-.dct-opt { display: grid; gap: 6px; color: #dedee3; cursor: pointer; }
-.dct-opt-top { display: flex; justify-content: space-between; }
-.dct-opt-val { color: #adadb8; font-variant-numeric: tabular-nums; }
-.dct-opt input[type=range] { width: 100%; accent-color: #9146ff; margin: 0; }
-.dct-opt-row { grid-template-columns: 1fr auto; grid-auto-flow: column; align-items: center; }
-.dct-opt input[type=checkbox] { accent-color: #9146ff; width: 16px; height: 16px; margin: 0; }
-
-.dct-foot { padding: 8px 14px 10px; font-size: 11px; color: #adadb8; }
-.dct-foot a { color: #bf94ff; text-decoration: none; }
-.dct-foot a:hover { text-decoration: underline; }
 
 /* Subtítulos: sobre el video, encima de la barra de controles */
 .dct-captions {
@@ -85,11 +43,8 @@
 .dct-w.dct-on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .dct-w { transition: none; } }
 
-/* En pantalla completa el player crece; el menú y el botón heredan bien. En teatro
-   la barra de controles queda igual. Nada especial que hacer. */
-
 /* El atributo hidden pierde contra cualquier display: propio; se reafirma. */
-.dct-toast[hidden], .dct-menu[hidden], .dct-captions[hidden], .dct-btn-wrap[hidden] { display: none !important; }
+.dct-toast[hidden], .dct-captions[hidden], .dct-btn-wrap[hidden] { display: none !important; }
 
 /* Aviso de audio bloqueado por el navegador */
 .dct-toast {

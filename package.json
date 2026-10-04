@@ -1,13 +1,17 @@
 {
-  "name": "decatron-translate-extension",
-  "version": "0.1.0",
+  "name": "decatron-extension",
+  "version": "0.2.0",
   "private": true,
-  "description": "Extensión de Chrome: escucha un stream de Twitch en tu idioma con Decatron Translate",
+  "description": "Extensión de navegador de Decatron para Twitch: traducción, emotes y más, por módulos",
   "type": "module",
   "scripts": {
     "test:video": "ffmpeg -y -loglevel error -f lavfi -i testsrc=size=640x360:rate=15 -f lavfi -i sine=frequency=330:sample_rate=44100 -t 120 -c:v libvpx -b:v 300k -c:a libopus test/fake-stream.webm",
+    "test:dict": "node test/dict.test.mjs",
     "test:e2e": "node test/e2e.mjs",
-    "pack": "node -e \"const {execSync}=require('child_process');const fs=require('fs');const v=JSON.parse(fs.readFileSync('src/manifest.json')).version;try{execSync('cd src && zip -qr ../decatron-translate-'+v+'.zip . -x \\\"*.DS_Store\\\"')}catch{execSync('python3 -c \\\"import shutil;shutil.make_archive(\\'decatron-translate-'+v+'\\',\\'zip\\',\\'src\\')\\\"')}console.log('decatron-translate-'+v+'.zip')\""
+    "test:twitch": "node test/e2e-twitch.mjs",
+    "test:picker": "node test/e2e-picker.mjs",
+    "pack": "node scripts/build.mjs chrome",
+    "pack:firefox": "node scripts/build.mjs firefox"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0"

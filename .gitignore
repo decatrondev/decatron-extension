@@ -3,3 +3,4 @@ test/profile*/
 test/fake-stream.webm
 test/*.png
 *.zip
+dist/

@@ -1,0 +1,10 @@
+/* Emotes en el chat de Twitch. Prefijo dct- en todo para no chocar con los estilos de Twitch. */
+:root { --dct-emote-h: 28px; }
+
+.dct-emote { display: inline-block; position: relative; vertical-align: middle; margin: -0.5rem 0.1rem; line-height: 0; }
+.dct-emote-img { display: block; height: var(--dct-emote-h); width: auto; max-width: calc(var(--dct-emote-h) * 4); }
+/* Un emote "encima del anterior" (sombreros, efectos) se dibuja sobre el emote de antes */
+.dct-emote-zw { position: absolute; left: 0; top: 0; }
+
+/* Selector de emotes con ":" (vive en su propio Shadow DOM; estos son los estilos del contenedor) */
+#decatron-picker { position: fixed; z-index: 2147482000; }

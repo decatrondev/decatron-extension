@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Decatron Translate",
-  "version": "0.1.10",
-  "description": "Escucha tu stream favorito de Twitch en tu idioma. Solo tú lo oyes: el canal y el resto del chat no cambian.",
+  "name": "Decatron",
+  "version": "0.2.0",
+  "description": "Decatron en Twitch: escucha el stream en tu idioma y ve los emotes de 7TV, BTTV, FFZ y los de cada comunidad de Decatron, sin instalar otras extensiones.",
   "default_locale": "es",
   "icons": {
     "16": "icons/16.png",
@@ -15,7 +15,11 @@
   ],
   "host_permissions": [
     "https://www.twitch.tv/*",
-    "https://decatron.net/*"
+    "https://decatron.net/*",
+    "https://7tv.io/*",
+    "https://api.betterttv.net/*",
+    "https://api.frankerfacez.com/*",
+    "https://gql.twitch.tv/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -26,7 +30,7 @@
       "16": "icons/16.png",
       "32": "icons/32.png"
     },
-    "default_title": "Decatron Translate"
+    "default_title": "Decatron"
   },
   "content_scripts": [
     {
@@ -34,15 +38,34 @@
         "https://www.twitch.tv/*"
       ],
       "js": [
+        "i18n.js",
+        "core.js",
+        "kit.js",
         "signalr-lite.js",
         "audio.js",
-        "player-ui.js",
-        "content.js"
+        "captions-ui.js",
+        "shell.js",
+        "emote-picker.js",
+        "modules/translation.js",
+        "modules/emotes.js",
+        "modules/points.js",
+        "main.js"
       ],
       "css": [
-        "player.css"
+        "player.css",
+        "emotes.css"
       ],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "panel.css"
+      ],
+      "matches": [
+        "https://www.twitch.tv/*"
+      ]
     }
   ]
 }
