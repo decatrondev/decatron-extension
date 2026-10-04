@@ -259,6 +259,19 @@
     for (const f of missed.slice(0, 3)) out.push(`  ejemplo: «${f.textContent.trim().slice(0, 60)}» · marcado: ${f.dataset.dct || "no"} · línea: ${f.closest(LINE) ? "sí" : "no"}`);
     const own = mod.entries.filter((e) => e.p === "own").slice(0, 6).map((e) => e.n);
     if (own.length) out.push(`propios: ${own.join(", ")}`);
+
+    // Lo que hay en toda la página, por si el chat no está donde esperamos
+    const anywhere = [...document.querySelectorAll('[data-a-target="chat-line-message"], .chat-line__message, .vod-message, [class*="chat-line"]')];
+    out.push(`en toda la página: ${anywhere.length} elementos de línea de chat · mensajes de otros marcos: ${window.frames.length} marcos`);
+    const last = lines[lines.length - 1] || anywhere[anywhere.length - 1];
+    if (last) {
+      const chain = [];
+      for (let n = last.parentElement, i = 0; n && i < 5; n = n.parentElement, i++) chain.push(`${n.tagName.toLowerCase()}${n.className && typeof n.className === "string" ? "." + n.className.trim().split(/\s+/).filter((c) => !/^(Layout|InjectLayout|ScCore)/.test(c)).slice(0, 2).join(".") : ""}`);
+      out.push(`última línea dentro de: ${chain.join(" < ")}`);
+      const body = last.querySelector(BODY);
+      out.push(`cuerpo de la última línea: ${body ? body.outerHTML.slice(0, 380) : "(no tiene [data-a-target=chat-line-message-body])"}`);
+      if (!body) out.push(`la última línea: ${last.outerHTML.slice(0, 380)}`);
+    }
     return out.join("\n");
   }
 
