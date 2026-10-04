@@ -9,13 +9,15 @@
   const CHAT = ".chat-scrollable-area__message-container";
   const LINE = ".chat-line__message";
   const BODY = '[data-a-target="chat-line-message-body"]';
+  // Los trozos de texto de un mensaje: en Twitch están dentro del cuerpo del mensaje; FrankerFaceZ rehace las líneas y los deja dentro de span.message
+  const FRAGMENT = '[data-a-target="chat-line-message-body"] > .text-fragment, .message > .text-fragment';
   const OTHER_EXT = '[class*="seventv"], seventv-container, [class*="bttv"], .bttv-tooltip-container, [class*="ffz-"], .ffz--inline';
 
   const mod = {
     id: "emotes",
     order: 2,
     icon: SMILE,
-    defaults: { enabled: true, own: true, sevenTv: true, bttv: true, ffz: true, globals: true, other: "auto", size: "normal", picker: true },
+    defaults: { enabled: true, own: true, sevenTv: true, bttv: true, ffz: true, globals: true, other: "always", size: "normal", picker: true },
     name: () => t("em.name"),
     description: () => t("em.desc"),
 
@@ -201,11 +203,9 @@
   /** Los textos de un mensaje: se parte por palabras y las que son un emote del diccionario pasan a ser imágenes */
   function processLine(line) {
     if (mod.dict.size === 0) return;
-    const body = line.querySelector(BODY);
-    if (!body) return;
     const ownOnly = mod.settings().other === "auto" && otherDetected();
-    // Cada trozo de texto se marca por separado: si Twitch completa la línea después, los que faltan se procesan igual
-    for (const frag of body.querySelectorAll(":scope > .text-fragment")) {
+    // Cada trozo de texto se marca por separado: si Twitch (o FFZ) completa la línea después, los que faltan se procesan igual
+    for (const frag of line.querySelectorAll(FRAGMENT)) {
       if (frag.dataset.dct === "1") continue;
       frag.dataset.dct = "1";
       replaceText(frag, mod.dict, ownOnly);
@@ -243,8 +243,8 @@
   function diagnose() {
     const chat = document.querySelector(CHAT);
     const lines = chat ? [...chat.querySelectorAll(LINE)] : [];
-    const bodies = lines.filter((l) => l.querySelector(BODY));
-    const fragments = lines.flatMap((l) => [...l.querySelectorAll(BODY + " > .text-fragment")]);
+    const bodies = lines.filter((l) => l.querySelector(BODY) || l.querySelector(".message"));
+    const fragments = lines.flatMap((l) => [...l.querySelectorAll(FRAGMENT)]);
     const drawn = lines.filter((l) => l.querySelector(".dct-emote"));
     // Mensajes que traen una palabra del diccionario y siguen como texto
     const missed = fragments.filter((f) => !f.querySelector(".dct-emote") && f.textContent.split(/\s+/).some((w) => mod.dict.has(w)));

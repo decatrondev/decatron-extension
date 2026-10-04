@@ -24,7 +24,7 @@ un mismo panel. Funciona en Chrome, Edge, Brave y Opera; hay un paquete para Fir
   7TV > BTTV > FFZ, y lo del canal sobre lo global (la misma que usa el overlay de chat de Decatron).
 - Las palabras del chat que coinciden con un emote pasan a ser imágenes; los emotes nativos de Twitch no se tocan. Los emotes
   «encima del anterior» (zero-width: sombreros, efectos) se apilan sobre el emote de antes.
-- Si detecta otra extensión de emotes (7TV, BTTV, FFZ), dibuja solo los propios de Decatron para no duplicar (se puede forzar).
+- Convive con FrankerFaceZ, BTTV y 7TV: dibuja lo que esas extensiones dejan como texto (por ejemplo los emotes de 7TV si solo tienes FFZ, o los propios de Decatron), sin duplicar los que ellas ya reemplazaron. FFZ rehace las líneas del chat con otro HTML (`span.message`); también se soporta. Si prefieres, en el panel se puede elegir dibujar solo los propios.
 - **Selector con `:`**: escribe `:` y las primeras letras en la caja de chat; flechas, Enter o Tab (o un clic) para elegir.
   La caja de Twitch es un editor Slate: el texto se inserta con un evento `beforeinput`, con respaldo por pegado.
 - Los demás ven estos emotes en el chat solo si también tienen una extensión que los dibuje; en el overlay del stream se ven siempre.
@@ -78,6 +78,7 @@ npm i
 npm run test:dict      # diccionario de emotes contra 7TV, BTTV, FFZ y Twitch reales (necesita red)
 npm run test:twitch -- <canal-en-vivo>   # botón, panel, carga de emotes y reemplazo contra el Twitch REAL (chat público)
 npm run test:picker    # selector con ":" contra un editor Slate de verdad
+npm run test:ffz -- <canal-en-vivo>   # junto a FrankerFaceZ (carga su script en el Twitch real)
 npm run test:video && npm run test:e2e   # traducción contra una réplica del player (con DURATION=3 solo mira la interfaz)
 ```
 
