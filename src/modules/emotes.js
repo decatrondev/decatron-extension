@@ -112,6 +112,7 @@
           kit.row(t("em.size"), null, kit.select(s0().size, [["small", t("em.size.small")], ["normal", t("em.size.normal")], ["large", t("em.size.large")]], (v) => set({ size: v }))),
           kit.toggleRow(t("em.picker"), t("em.pickerHint"), s0().picker, (v) => set({ picker: v })),
           h("div", { style: "padding-top:10px" }, reloadBtn)),
+        kit.section(t("em.diag"), h("p", { class: "row-hint" }, t("em.diagHint")), diagBox()),
         h("p", { class: "row-hint" }, t("em.note")));
 
       renderStatus();
@@ -236,6 +237,39 @@
       lastWrap = wrap;
     }
     span.replaceChildren(out);
+  }
+
+  // ───────────── diagnóstico (para saber qué pasa en el chat de quien lo usa)
+  function diagnose() {
+    const chat = document.querySelector(CHAT);
+    const lines = chat ? [...chat.querySelectorAll(LINE)] : [];
+    const bodies = lines.filter((l) => l.querySelector(BODY));
+    const fragments = lines.flatMap((l) => [...l.querySelectorAll(BODY + " > .text-fragment")]);
+    const drawn = lines.filter((l) => l.querySelector(".dct-emote"));
+    // Mensajes que traen una palabra del diccionario y siguen como texto
+    const missed = fragments.filter((f) => !f.querySelector(".dct-emote") && f.textContent.split(/\s+/).some((w) => mod.dict.has(w)));
+    const out = [
+      `versión ${D.version} · canal ${D.channel || "-"} · página ${location.pathname}`,
+      `módulo: ${mod.settings().enabled === false ? "apagado" : "encendido"} · estado: ${mod.state.status} · diccionario: ${mod.dict.size} emotes (${mod.entries.filter((e) => e.p === "own").length} propios)`,
+      `otra extensión de emotes detectada: ${otherDetected() ? "sí" : "no"} · modo: ${mod.settings().other}`,
+      `contenedor del chat: ${chat ? "encontrado" : "NO encontrado"} · observado: ${mod.watched ? "sí" : "no"}`,
+      `líneas: ${lines.length} · con cuerpo de mensaje: ${bodies.length} · trozos de texto: ${fragments.length} · líneas con emotes dibujados: ${drawn.length}`,
+      `trozos con un emote del diccionario que siguen como texto: ${missed.length}`,
+    ];
+    for (const f of missed.slice(0, 3)) out.push(`  ejemplo: «${f.textContent.trim().slice(0, 60)}» · marcado: ${f.dataset.dct || "no"} · línea: ${f.closest(LINE) ? "sí" : "no"}`);
+    const own = mod.entries.filter((e) => e.p === "own").slice(0, 6).map((e) => e.n);
+    if (own.length) out.push(`propios: ${own.join(", ")}`);
+    return out.join("\n");
+  }
+
+  function diagBox() {
+    const pre = h("pre", { class: "diag" });
+    const run = h("button", { class: "btn", onclick: () => { pre.textContent = diagnose(); pre.hidden = false; copy.hidden = false; } }, t("em.diagRun"));
+    const copy = h("button", { class: "btn", hidden: true, onclick: async () => {
+      try { await navigator.clipboard.writeText(pre.textContent); copy.textContent = t("em.diagCopied"); setTimeout(() => { copy.textContent = t("em.diagCopy"); }, 1500); } catch { /* sin permiso */ }
+    } }, t("em.diagCopy"));
+    pre.hidden = true;
+    return h("div", null, h("div", { style: "display:flex;gap:8px" }, run, copy), pre);
   }
 
   D.register(mod);

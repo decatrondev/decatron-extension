@@ -74,6 +74,11 @@
     "em.provider.7tv": "7TV",
     "em.provider.bttv": "BTTV",
     "em.provider.ffz": "FFZ",
+    "em.diag": "Diagnóstico",
+    "em.diagHint": "Si los emotes no salen en el chat, pulsa el botón y mándame lo que diga.",
+    "em.diagRun": "Revisar el chat",
+    "em.diagCopy": "Copiar",
+    "em.diagCopied": "¡Copiado!",
     "em.note": "Los demás ven estos emotes en el chat solo si también tienen la extensión de Decatron (o la de 7TV, BTTV o FFZ para sus emotes). En el overlay del stream se ven siempre.",
 
     "pt.name": "Puntos de canal",
@@ -163,6 +168,11 @@
     "em.provider.7tv": "7TV",
     "em.provider.bttv": "BTTV",
     "em.provider.ffz": "FFZ",
+    "em.diag": "Diagnostics",
+    "em.diagHint": "If emotes don't show in the chat, press the button and send me what it says.",
+    "em.diagRun": "Check the chat",
+    "em.diagCopy": "Copy",
+    "em.diagCopied": "Copied!",
     "em.note": "Other people see these emotes in the chat only if they also have the Decatron extension (or 7TV, BTTV or FFZ for their emotes). In the stream's overlay they always show.",
 
     "pt.name": "Channel points",
