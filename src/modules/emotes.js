@@ -190,18 +190,25 @@
 
   function handleNode(node) {
     if (node.nodeType !== 1) return;
+    // Twitch puede armar la línea por partes: lo que se agrega dentro de una línea ya existente también cuenta
+    const line = node.closest && node.closest(LINE);
+    if (line) { processLine(line); return; }
     if (node.matches && node.matches(LINE)) processLine(node);
-    else if (node.querySelectorAll) for (const line of node.querySelectorAll(LINE)) processLine(line);
+    else if (node.querySelectorAll) for (const l of node.querySelectorAll(LINE)) processLine(l);
   }
 
   /** Los textos de un mensaje: se parte por palabras y las que son un emote del diccionario pasan a ser imágenes */
   function processLine(line) {
-    if (mod.dict.size === 0 || line.dataset.dct === "1") return;
+    if (mod.dict.size === 0) return;
     const body = line.querySelector(BODY);
     if (!body) return;
-    line.dataset.dct = "1";
     const ownOnly = mod.settings().other === "auto" && otherDetected();
-    for (const frag of body.querySelectorAll(":scope > .text-fragment")) replaceText(frag, mod.dict, ownOnly);
+    // Cada trozo de texto se marca por separado: si Twitch completa la línea después, los que faltan se procesan igual
+    for (const frag of body.querySelectorAll(":scope > .text-fragment")) {
+      if (frag.dataset.dct === "1") continue;
+      frag.dataset.dct = "1";
+      replaceText(frag, mod.dict, ownOnly);
+    }
   }
 
   function replaceText(span, dict, ownOnly) {
