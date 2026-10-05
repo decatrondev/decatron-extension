@@ -48,7 +48,7 @@ Español (anadir Ingles con la descripcion EN)
 
 
 === RECURSOS GRAFICOS (carpeta store/ del repo) ===
-- Icono de la tienda 128x128:  store/icon-128.png
+- Icono de la tienda 128x128:  store/icon-128-chrome.png
 - Tile promocional pequeno 440x280 (obligatorio):  store/promo-440x280.png
 - Marquee 1400x560 (opcional):  store/marquee-1400x560.png
 - Capturas 1280x800 (minimo 1, maximo 5): TOMARLAS en Twitch real con la extension cargada:

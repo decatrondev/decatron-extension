@@ -50,7 +50,7 @@ Streamer? Turn on live translation at decatron.net and viewers from other countr
 - **Certificaciones:** marcar las tres (no vender datos, no usar para fines ajenos a la funcionalidad, no usar para solvencia/préstamos).
 
 ## Recursos gráficos (en esta carpeta)
-- `icon-128.png` — icono de la tienda
+- `icon-128-chrome.png` — icono de la tienda
 - `promo-440x280.png` — tile pequeño (obligatorio)
 - `marquee-1400x560.png` — marquee (opcional)
 - **Capturas 1280×800 (mínimo 1, máximo 5):** tomar en Twitch real con la app en marcha:
