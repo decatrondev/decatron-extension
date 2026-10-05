@@ -111,11 +111,27 @@ Obtener el identificador numérico del canal que se está viendo, que 7TV y Bett
 --- ¿Usas código remoto? ---
 No. Todo el JavaScript va dentro del paquete.
 
---- Qué datos recopila (marcar solo esta casilla) ---
+--- Qué datos recopila ---
+Regla de Google (FAQ de datos de usuario, sección 3): hay que declarar los datos aunque solo se
+procesen en el dispositivo y no se envíen a ningún servidor.
+
+SEGURO (respaldado por la documentación de Google y por lo que hace el código):
 [x] Historial web
-    (el nombre del canal que el usuario ve se envía a los servicios de traducción y emotes)
-Dejar SIN marcar todas las demás (datos personales, salud, financieros, autenticación,
-comunicaciones personales, ubicación, actividad del usuario, contenido del sitio).
+    La extensión toma el canal de la URL de twitch.tv y lo envía a los servicios de traducción y emotes.
+    La FAQ (sección 4) incluye como actividad de navegación "los dominios o URLs con los que interactúa el navegador".
+[x] Contenido de sitios web
+    La extensión lee el texto del chat de la página (solo en el navegador) para dibujar los emotes.
+    La FAQ dice que lo procesado solo en local también se declara.
+
+SIN CONFIRMAR (la documentación de Google no lo define; decides tú):
+[ ] Comunicaciones personales
+    El selector de emotes lee lo que el usuario escribe en la caja de chat (solo en local) para detectar ":".
+    La consola da como ejemplo "mensajes de chat". No sé si Google lo cuenta aquí.
+[ ] Ubicación
+    La consola lista "dirección IP" bajo Ubicación. La extensión no recoge la IP, pero los servidores
+    la ven en cada petición (como en cualquier sitio web). La FAQ no aclara si cuenta.
+
+NO marcar (la extensión no los toca): datos personales, salud, financieros, autenticación, actividad del usuario.
 
 --- Certificaciones (marcar las tres) ---
 [x] No vendo ni transfiero datos de usuarios a terceros fuera de los casos de uso aprobados.
