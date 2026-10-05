@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Decatron",
-  "version": "0.2.3",
-  "description": "Decatron en Twitch: escucha el stream en tu idioma y ve los emotes de 7TV, BTTV, FFZ y los de cada comunidad de Decatron, sin instalar otras extensiones.",
+  "version": "0.2.4",
+  "description": "Decatron en Twitch: escucha el stream en tu idioma y ve los emotes de 7TV, BTTV, FFZ y los de cada comunidad de Decatron.",
   "default_locale": "es",
   "icons": {
     "16": "icons/16.png",
