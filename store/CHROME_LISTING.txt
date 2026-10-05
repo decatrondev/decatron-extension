@@ -1,6 +1,6 @@
 LISTADO DE CHROME WEB STORE - copiar cada seccion en su campo
 Consola: https://chrome.google.com/webstore/devconsole
-Paquete: decatron-chrome-0.2.3.zip (raiz del repo; generarlo con: npm run pack)
+Paquete: decatron-chrome-0.2.5.zip (raiz del repo; generarlo con: npm run pack)
 =========================================================================
 
 
@@ -56,8 +56,14 @@ Español (anadir Ingles con la descripcion EN)
     2. Chat con emotes de 7TV/BTTV/FFZ y el selector abierto al escribir ":"
     3. Subtitulo en pantalla durante una frase
     4. Panel con el modulo Emotes y sus interruptores
-AVISO: promo-440x280.png y marquee-1400x560.png todavia dicen "Decatron Translate" (logo T morado).
-Hay que rehacerlos con el nombre "Decatron" antes de subirlos.
+Las tres imagenes ya estan rehechas con el nombre Decatron y la mascota completa.
+Falta solo tomar las capturas (1280x800 PNG, sin transparencia).
+
+CAMPOS EXTRA (ficha de la tienda):
+- URL de la pagina principal: https://decatron.net/translate
+- URL de la asistencia: https://decatron.net/translate
+- Contenido adulto: NO marcar
+- URL oficial: Ninguno
 
 
 ##########  PESTAÑA "PRACTICAS DE PRIVACIDAD" (Privacy practices)  ##########
