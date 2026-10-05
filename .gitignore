@@ -4,3 +4,4 @@ test/fake-stream.webm
 test/*.png
 *.zip
 dist/
+store/screenshots/
