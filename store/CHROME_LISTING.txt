@@ -1,0 +1,136 @@
+LISTADO DE CHROME WEB STORE - copiar cada seccion en su campo
+Consola: https://chrome.google.com/webstore/devconsole
+Paquete: decatron-chrome-0.2.3.zip (raiz del repo; generarlo con: npm run pack)
+=========================================================================
+
+
+##########  PESTAÑA "FICHA DE LA TIENDA" (Store listing)  ##########
+
+
+=== NOMBRE ===
+Decatron
+
+
+=== RESUMEN (max 132) ===
+Decatron en Twitch: escucha el stream en tu idioma y ve los emotes de 7TV, BTTV, FFZ y los de cada comunidad de Decatron.
+
+
+=== DESCRIPCION (ES) ===
+Decatron reúne en un solo panel lo que Decatron hace por Twitch, en módulos que enciendes y apagas.
+
+• Traducción: en los canales que la ofrecen, escuchas al streamer doblado a tu idioma en tiempo real, con subtítulos. Solo tú lo oyes.
+• Emotes: ve en el chat los emotes de 7TV, BetterTTV y FrankerFaceZ, y los propios y globales de Decatron, sin instalar otras extensiones. Incluye un selector: escribe «:» y las primeras letras para elegir un emote.
+• Próximamente: puntos de canal automáticos y más.
+
+Cómo usarlo: instala la extensión y abre un canal de Twitch. El botón de Decatron junto al engranaje del player abre el panel.
+
+Sin cuenta, sin anuncios. Tus preferencias se guardan en tu navegador.
+
+
+=== DESCRIPCION (EN) - para añadir el idioma Ingles ===
+Decatron brings everything Decatron does for Twitch into one panel, as modules you turn on and off.
+
+• Translation: on channels that offer it, hear the streamer dubbed into your language in real time, with captions. Only you hear it.
+• Emotes: see 7TV, BetterTTV and FrankerFaceZ emotes in the chat, plus Decatron's own and global emotes, without installing other extensions. Includes a picker: type ":" and the first letters to choose an emote.
+• Coming soon: automatic channel points and more.
+
+How to use it: install the extension and open a Twitch channel. The Decatron button next to the player's gear opens the panel.
+
+No account, no ads. Your preferences live in your browser.
+
+
+=== CATEGORIA ===
+Entretenimiento (alternativa: Social y comunicacion)
+
+
+=== IDIOMA ===
+Español (anadir Ingles con la descripcion EN)
+
+
+=== RECURSOS GRAFICOS (carpeta store/ del repo) ===
+- Icono de la tienda 128x128:  store/icon-128.png
+- Tile promocional pequeno 440x280 (obligatorio):  store/promo-440x280.png
+- Marquee 1400x560 (opcional):  store/marquee-1400x560.png
+- Capturas 1280x800 (minimo 1, maximo 5): TOMARLAS en Twitch real con la extension cargada:
+    1. Player con el panel de Decatron abierto (modulo Traduccion: idiomas)
+    2. Chat con emotes de 7TV/BTTV/FFZ y el selector abierto al escribir ":"
+    3. Subtitulo en pantalla durante una frase
+    4. Panel con el modulo Emotes y sus interruptores
+AVISO: promo-440x280.png y marquee-1400x560.png todavia dicen "Decatron Translate" (logo T morado).
+Hay que rehacerlos con el nombre "Decatron" antes de subirlos.
+
+
+##########  PESTAÑA "PRACTICAS DE PRIVACIDAD" (Privacy practices)  ##########
+
+
+=== FINALIDAD UNICA (Single purpose) ===
+Mejorar la experiencia de los canales de Twitch que el usuario ve: traducción en vivo y emotes en el chat.
+
+
+=== JUSTIFICACION DE PERMISOS ===
+
+storage:
+Guardar las preferencias del usuario (idioma preferido, volumen de fondo, subtítulos, módulos activos) y una copia temporal de las listas de emotes.
+
+Host https://www.twitch.tv/*:
+Insertar el botón y el panel en el reproductor, dibujar los emotes en el chat y controlar el volumen del video para la traducción.
+
+Host https://decatron.net/*:
+Consultar si el canal ofrece traducción, recibir el audio y los subtítulos traducidos, y obtener los emotes propios y globales de Decatron.
+
+Host https://7tv.io/*:
+Obtener los emotes de 7TV (globales y del canal) para mostrarlos en el chat.
+
+Host https://api.betterttv.net/*:
+Obtener los emotes de BetterTTV (globales y del canal) para mostrarlos en el chat.
+
+Host https://api.frankerfacez.com/*:
+Obtener los emotes de FrankerFaceZ (globales y del canal) para mostrarlos en el chat.
+
+Host https://gql.twitch.tv/*:
+Obtener el identificador numérico del canal que se está viendo, que 7TV y BetterTTV piden para devolver los emotes de ese canal.
+
+
+=== CODIGO REMOTO ===
+¿Usa codigo remoto?: NO
+(todo el JavaScript va dentro del paquete; no se carga ni se ejecuta codigo desde servidores)
+
+
+=== USO DE DATOS (que se recoge) ===
+Sugerencia: marcar SOLO "Historial web" (Web history), porque el nombre del canal visto se envia
+a los servicios de traduccion y emotes. NO marcar: datos personales, de salud, financieros,
+autenticacion, comunicaciones personales, ubicacion, actividad del usuario ni contenido del sitio
+(el texto del chat se lee solo en el navegador y no se envia a ningun servidor).
+Decision tuya: si prefieres no declarar nada, hay que estar seguro de que el canal visto no cuenta como historial.
+
+
+=== CERTIFICACIONES (marcar las tres) ===
+- No vendo ni transfiero datos de usuarios a terceros fuera de los casos de uso aprobados.
+- No uso ni transfiero datos para fines no relacionados con la finalidad unica del elemento.
+- No uso ni transfiero datos para determinar solvencia ni para prestamos.
+
+
+=== POLITICA DE PRIVACIDAD (URL) ===
+https://decatron.net/translate#privacy
+
+
+##########  PESTAÑA "DISTRIBUCION" (Distribution)  ##########
+
+Visibilidad: Publica
+Regiones: todas
+Precio: gratis
+
+
+##########  CUENTA DE DESARROLLADOR  ##########
+
+Pago unico de 5 USD para registrarse como desarrollador de Chrome Web Store (si aun no lo hiciste).
+Correo de contacto de la ficha: anthonydeca@decatron.net (se verifica por correo).
+Para mostrarlo como "editor verificado" conviene tener el dominio decatron.net verificado.
+
+
+##########  NOTAS PARA EL REVISOR (campo opcional en "Prueba")  ##########
+
+No account or login is needed to test the extension.
+Emotes: open any live channel on https://www.twitch.tv. Emotes render in the chat; typing ":" plus letters in the chat box opens the picker. The Decatron button next to the player's gear opens the panel.
+Translation: the option only appears on channels with live translation enabled on Decatron; otherwise the panel shows "not available on this channel" (expected).
+Code is plain JavaScript, not minified. Only the channel name being watched is sent to decatron.net, 7tv.io, api.betterttv.net, api.frankerfacez.com and gql.twitch.tv. Chat text is read locally and never sent.

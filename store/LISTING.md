@@ -1,4 +1,6 @@
-# Ficha para la Chrome Web Store
+# Ficha de la tienda (versión antigua: Decatron Translate)
+
+> Los textos vigentes (Decatron 0.2.x) están en `CHROME_LISTING.txt` y `FIREFOX_LISTING.txt`. Este archivo queda como referencia histórica.
 
 Copiar/pegar al crear el elemento en https://chrome.google.com/webstore/devconsole
 
