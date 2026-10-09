@@ -14,8 +14,13 @@
     available: false, live: false, languages: [], listeners: {}, selected: null, connection: "idle",
     history: [], lag: null, skipped: 0, lastSegAt: 0,
   });
-  const HISTORY_MAX = 30;
-  const SILENT_AFTER_MS = 25000;   // en vivo y unido, pero nadie habla desde hace rato
+  const Dsp = window.__decatronDsp;
+  // Valores ajustables desde el servidor (vienen en la consulta pública del canal); sin ellos, los de fábrica
+  let tuning = Dsp.sanitizeTuning(null);
+  const applyTuning = (raw) => {
+    tuning = Dsp.sanitizeTuning(raw);
+    if (mod.current) mod.current.player.tuning = tuning;
+  };
 
   function findPlayer() {
     const video = document.querySelector(".video-player video, video[playsinline]");
@@ -82,7 +87,7 @@
         else if (!s.live) sub = t("tr.notLive");
         else if (s.connection === "connecting") sub = t("tr.connecting");
         else if (s.connection === "reconnecting") { sub = t("tr.reconnecting"); tone = "warn"; }
-        else if (s.selected && s.connection === "connected" && Date.now() - (s.lastSegAt || mod.joinedAt || 0) > SILENT_AFTER_MS) sub = t("tr.waitSpeech");
+        else if (s.selected && s.connection === "connected" && Date.now() - (s.lastSegAt || mod.joinedAt || 0) > tuning.silentAfterSec * 1000) sub = t("tr.waitSpeech");
         const note = kit.notice(sub, tone);
         listBox.append(h("h3", null, t("tr.listenIn")),
           retry ? h("div", { class: "notice-row" }, note, h("button", { class: "btn primary", onclick: () => retryConnect() }, t("tr.retry"))) : note);
@@ -154,6 +159,7 @@
     if (D.channel !== login) return;               // ya se fue a otro canal
     if (!info || !info.enabled) { setBadge(login, null); return; }
 
+    applyTuning(info.tuning);
     mod.setState({ available: true, live: !!info.live, languages: info.languages || [], listeners: {} });
     setBadge(login, info);
 
@@ -171,6 +177,7 @@
     player.onsegment = (meta, dur) => ui.showCaption(meta, dur);
     player.onaudioblocked = (b, reason) => ui.setAudioBlocked(b, reason);
     player.captionsOnly = !!D.prefs.captionsOnly;
+    player.tuning = tuning;
     player.ondrop = (d) => onSkipped(d);
     player.onlag = (s) => { mod.state.lag = mod.state.lag == null ? s : mod.state.lag * 0.6 + s * 0.4; D.emit("module-update", "translation"); };
     player.onbuffer = () => D.emit("module-update", "translation");
@@ -190,7 +197,7 @@
       if (mod.current !== cur || cur.hub) return;
       const rr = await D.sw({ type: "fetchPublic", login });
       const i2 = rr && rr.ok ? rr.data : null;
-      if (i2 && mod.current === cur) { cur.info = i2; mod.setState({ live: !!i2.live, languages: i2.languages || [] }); }
+      if (i2 && mod.current === cur) { cur.info = i2; applyTuning(i2.tuning); mod.setState({ live: !!i2.live, languages: i2.languages || [] }); }
     }, 30000);
 
     // Twitch re-renderiza el player (teatro, pantalla completa): subtítulos y video tienen que seguir al nuevo
@@ -296,7 +303,7 @@
   function addHistory(m) {
     const h2 = mod.state.history;
     h2.unshift({ seq: m.seq, at: Date.now(), text: m.text || "", source: m.source || "", dropped: false });
-    if (h2.length > HISTORY_MAX) h2.length = HISTORY_MAX;
+    if (h2.length > tuning.historyMax) h2.length = tuning.historyMax;
     mod.state.lastSegAt = Date.now();
     D.emit("module-update", "translation");
   }
@@ -308,7 +315,7 @@
     if (!cur) return;
     const e = mod.state.history.find((x) => x.seq === d.seq);
     if (e) e.dropped = true;
-    else if (d.meta) { mod.state.history.unshift({ seq: d.seq, at: Date.now(), text: d.meta.text || "", source: d.meta.source || "", dropped: true }); mod.state.history.length = Math.min(mod.state.history.length, HISTORY_MAX); }
+    else if (d.meta) { mod.state.history.unshift({ seq: d.seq, at: Date.now(), text: d.meta.text || "", source: d.meta.source || "", dropped: true }); mod.state.history.length = Math.min(mod.state.history.length, tuning.historyMax); }
     mod.state.skipped++;
     D.emit("module-update", "translation");
     skipBurst++;

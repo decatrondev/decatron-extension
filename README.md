@@ -80,6 +80,8 @@ npm run test:twitch -- <canal-en-vivo>   # botón, panel, carga de emotes y reem
 npm run test:picker    # selector con ":" contra un editor Slate de verdad
 npm run test:ffz -- <canal-en-vivo>   # junto a FrankerFaceZ (carga su script en el Twitch real)
 npm run test:video && npm run test:e2e   # traducción contra una réplica del player (con DURATION=3 solo mira la interfaz)
+npm run test:dsp       # estiramiento de voz (WSOLA), tiempos de subtítulos y validación de los valores del servidor; sin red
+npm run test:catchup   # modo alcance, historial, repetir y solo subtítulos en Chromium real con un hub simulado (necesita ffmpeg)
 ```
 
 `test:twitch` inyecta líneas con la forma del chat de Twitch en el contenedor real para comprobar el reemplazo; no puede escribir en la
@@ -96,3 +98,17 @@ twitch.tv/<canal> ── content script ──► GET decatron.net/api/live-tran
 
 El audio llega en trozos MP3, se decodifica con Web Audio y se encola en orden; el volumen del `<video>` se controla directamente
 (ducking inverso con rampa). Los subtítulos revelan las palabras al ritmo del audio.
+
+### Modo alcance, historial y solo subtítulos (0.3.0)
+
+- **Modo alcance** (`audio.js`, `dsp.js`): según los segundos de audio que quedan por delante, la voz se acelera por escalones sin
+  subirle el tono (WSOLA, no `playbackRate`). Solo si la cola pasa del límite se omiten las frases más viejas: se avisa sobre el video
+  y quedan marcadas en el historial. El servidor también omite lo que ya esperó demasiado (`SegmentDropped`, motivo `stale`).
+- **Subtítulos**: cada palabra se enciende según cuándo suena la voz (`dsp.wordTimings`). Con «solo subtítulos» no suena nada y el texto
+  sale al llegar, a ritmo de lectura.
+- **Historial** (`modules/translation.js`): las últimas frases con botón para repetir las que aún tienen audio guardado (las 6 últimas).
+- **Valores ajustables desde el servidor**: la consulta pública del canal trae `tuning` (umbrales y velocidades del modo alcance, límite
+  de cola, tiempos). Se editan en `LiveTranslation:ClientTuning` de `appsettings.json` del bot y se recargan solos, **sin publicar
+  versión en las tiendas**. Son solo datos: `dsp.sanitizeTuning` los valida y los recorta a límites fijos (velocidad máx. 1.5x), y si algo
+  no cuadra usa el valor de fábrica. Nada que venga del servidor se ejecuta.
+

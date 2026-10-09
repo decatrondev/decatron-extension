@@ -18,7 +18,7 @@ Decatron en Twitch: escucha el stream en tu idioma y ve los emotes de 7TV, BTTV,
 === DESCRIPCION (admite Markdown) ===
 Decatron reúne en un solo panel lo que Decatron hace por Twitch, en módulos que enciendes y apagas.
 
-**Traducción**: en los canales que la ofrecen, escuchas al streamer doblado a tu idioma en tiempo real, con subtítulos. Solo tú lo oyes.
+**Traducción**: en los canales que la ofrecen, escuchas al streamer doblado a tu idioma en tiempo real, con subtítulos sincronizados con la voz. Si el streamer habla seguido, la voz se acelera un poco sin cambiar el tono. También puedes verla solo con subtítulos, sin audio, y repetir cualquier frase reciente. Solo tú lo oyes.
 
 **Emotes**: ve en el chat los emotes de 7TV, BetterTTV y FrankerFaceZ, y los propios y globales de Decatron, sin instalar otras extensiones. Incluye un selector: escribe «:» y las primeras letras para elegir un emote.
 
@@ -70,8 +70,13 @@ Source code: plain JavaScript, not minified or bundled; the uploaded package is 
 Network requests (only the channel name being watched is sent): decatron.net, 7tv.io, api.betterttv.net, api.frankerfacez.com, gql.twitch.tv (to resolve the channel id). Chat text is read locally to render emotes and is never sent anywhere. Privacy policy: https://decatron.net/translate#privacy
 
 
+=== NOTAS PARA REVISORES - SOLO LA 0.3.0 (en ingles, anadir a las anteriores) ===
+Version 0.3.0 adds no permissions and no new hosts. New file: dsp.js (plain JavaScript, not minified): a WSOLA time-stretch so the translated voice can speed up without changing pitch, plus word-timing helpers for captions.
+The public channel endpoint on decatron.net (already used before) now also returns a small object of numeric tuning values (speed steps, thresholds, timings). They are data only: the extension validates them and clamps them to fixed limits, and nothing from the server is ever executed or evaluated. No remote code.
+
+
 === NOTAS DE LA VERSION ===
-Primera versión pública en Firefox. Módulo de traducción en vivo (escucha el stream en tu idioma, con subtítulos) y módulo de emotes (7TV, BetterTTV, FrankerFaceZ y emotes propios y globales de Decatron, con selector al escribir «:»).
+La traducción se pone al día sin cambiar la voz: si el streamer habla seguido, la voz se acelera un poco conservando el tono y, solo en último caso, se omiten frases con un aviso. Subtítulos sincronizados palabra por palabra con la voz. Nuevo modo «solo subtítulos» para ver sin audio. Historial de lo último dicho con botón para repetir una frase. Estado más claro: retraso aproximado, reconexión y botón de reintentar.
 
 
 === COMPATIBILIDAD ===

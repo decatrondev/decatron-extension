@@ -21,10 +21,10 @@
       this.chunks = new Map();  // seq -> { parts: [], meta }
       this.backgroundVolume = 0.15;
       this.delaySec = 0;        // retraso extra para cuadrar con el video
-      // Control de atraso: se acelera por escalones (dsp.rateForAhead) y, pasado este límite
-      // de audio en cola, se descartan las frases más viejas. Mejor perder una frase que ir
+      // Control de atraso: se acelera por escalones (dsp.rateForAhead) y, pasado el límite
+      // de audio en cola (tuning.maxBacklogSec), se descartan las frases más viejas. Mejor perder una frase que ir
       // un minuto detrás del video.
-      this.maxBacklogSec = 8;
+      this.tuning = window.__decatronDsp.sanitizeTuning(null);   // valores de fábrica; translation.js aplica los del servidor
       this.captionsOnly = false;  // solo subtítulos, sin audio ni ducking
       this.recent = new Map();    // seq -> { buffer, meta }: las últimas frases, para "repetir"
       this._playEndsAt = 0;       // currentTime del contexto en que termina lo que suena
@@ -145,7 +145,7 @@
 
       // Modo alcance: según cuánto audio hay por delante, se acelera sin subir el tono.
       let fallbackRate = 1;
-      const rate = window.__decatronDsp.rateForAhead(this._aheadSec());
+      const rate = window.__decatronDsp.rateForAhead(this._aheadSec(), this.tuning);
       if (rate > 1) {
         try { buffer = this._stretch(buffer, rate); }
         catch (err) { console.info("[decatron] estirar falló, uso playbackRate:", err && err.message); fallbackRate = rate; }
@@ -160,7 +160,7 @@
 
     /** Frase solo con subtítulo (modo sin audio): entra a la misma cola, dura lo que se tarda en leerla. */
     _enqueueSilent(seq, e) {
-      const dur = window.__decatronDsp.readSeconds(e.meta.text, this._aheadSec());
+      const dur = window.__decatronDsp.readSeconds(e.meta.text, this._aheadSec(), this.tuning);
       this.queue.push({ seq, silent: true, dur, meta: e.meta, arrivedAt: performance.now(), startedAt: e.startedAt, rate: 1, fallbackRate: 1 });
       this.queue.sort((a, b) => a.seq - b.seq);
       this._trimBacklog();
@@ -209,7 +209,7 @@
     }
 
     _trimBacklog() {
-      while (this.queue.length > 1 && this._backlogSec() > this.maxBacklogSec) {
+      while (this.queue.length > 1 && this._backlogSec() > this.tuning.maxBacklogSec) {
         const old = this.queue.shift();
         this.stats.dropped++;
         console.info(`[decatron] ✂ seg ${old.seq} omitido por atraso (cola ${this._backlogSec().toFixed(1)}s)`);

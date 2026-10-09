@@ -1,4 +1,4 @@
-CHROME WEB STORE - DECATRON (version 0.2.5)
+CHROME WEB STORE - DECATRON (version 0.3.0)
 Cada bloque es una pestaña de la consola, en el mismo orden. Copia y pega.
 Archivos en la carpeta store/ del repo (se bajan con scp).
 
@@ -6,7 +6,7 @@ Archivos en la carpeta store/ del repo (se bajan con scp).
 =====================================================================
 PESTAÑA "PAQUETE"
 =====================================================================
-Subir:  decatron-chrome-0.2.5.zip   (raiz del repo)
+Subir:  decatron-chrome-0.3.0.zip   (raiz del repo)
 
 
 =====================================================================
@@ -25,7 +25,7 @@ Decatron en Twitch: escucha el stream en tu idioma y ve los emotes de 7TV, BTTV,
 --- Descripción ---
 Decatron reúne en un solo panel lo que Decatron hace por Twitch, en módulos que enciendes y apagas.
 
-• Traducción: en los canales que la ofrecen, escuchas al streamer doblado a tu idioma en tiempo real, con subtítulos. Solo tú lo oyes.
+• Traducción: en los canales que la ofrecen, escuchas al streamer doblado a tu idioma en tiempo real, con subtítulos sincronizados con la voz. Si el streamer habla seguido, la voz se acelera un poco sin cambiar el tono. También puedes verla solo con subtítulos, sin audio, y repetir cualquier frase reciente. Solo tú lo oyes.
 • Emotes: ve en el chat los emotes de 7TV, BetterTTV y FrankerFaceZ, y los propios y globales de Decatron, sin instalar otras extensiones. Incluye un selector: escribe «:» y las primeras letras para elegir un emote.
 • Próximamente: puntos de canal automáticos y más.
 
@@ -173,3 +173,12 @@ PERFIL DEL PUBLICADOR (Configuración > Cuenta, ya hecho)
 =====================================================================
 Correo de contacto: anthonydeca@decatron.net
 Verificación de comerciante: en revisión (la ficha sale como "no comerciante" mientras tanto)
+
+
+=====================================================================
+NOVEDADES DE LA 0.3.0 (campo de notas / mensaje de la versión, si la consola lo pide)
+=====================================================================
+La traducción se pone al día sin cambiar la voz: si el streamer habla seguido, la voz se acelera un poco conservando el tono y, solo en último caso, se omiten frases con un aviso. Subtítulos sincronizados palabra por palabra con la voz. Nuevo modo «solo subtítulos» para ver sin audio. Historial de lo último dicho con botón para repetir una frase. Estado más claro: retraso aproximado, reconexión y botón de reintentar.
+
+Permisos: sin cambios (storage y los mismos sitios). Pestaña de privacidad: sin cambios.
+Código remoto: NO. La extensión pide a decatron.net, en la misma consulta pública de siempre, unos valores numéricos de ajuste (velocidades, umbrales, tiempos). Son solo datos: se validan y se recortan a límites fijos dentro de la extensión y nunca se ejecutan.

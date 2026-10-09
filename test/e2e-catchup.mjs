@@ -132,8 +132,10 @@ const stretched = logs.filter((l) => /seg \d+: .*\(x(1\.\d+)\)/.test(l)).map((l)
 const allRates = logs.filter((l) => /\] seg \d+: /.test(l) && /\(x\d/.test(l)).map((l) => Number(l.match(/\(x([\d.]+)\)/)[1]));
 console.log('   velocidades por frase:', allRates.join(', '));
 check(allRates[0] === 1, 'la primera frase va a velocidad normal');
-check(stretched.length >= 2 && stretched.every((r) => r <= 1.25), 'las siguientes se aceleran por escalones, sin pasar de 1.25x', stretched.join(','));
-check(new Set(stretched).size >= 2, 'la aceleración sube con el atraso (más de un escalón)', [...new Set(stretched)].join(','));
+const MAXR = Number(process.env.MAX_RATE || 1.25);   // con MAX_RATE se prueba que la extensión obedece al servidor
+check(stretched.length >= 2 && stretched.every((r) => r <= MAXR), `las siguientes se aceleran por escalones, sin pasar de ${MAXR}x`, stretched.join(','));
+if (process.env.MAX_RATE) check(stretched.includes(MAXR), `la extensión usó la velocidad que mandó el servidor (${MAXR}x)`, stretched.join(','));
+if (!process.env.MAX_RATE) check(new Set(stretched).size >= 2, 'la aceleración sube con el atraso (más de un escalón)', [...new Set(stretched)].join(','));
 check(!logs.some((l) => /estirar falló|PAGEERROR/.test(l)), 'el estiramiento no falló y no hubo errores de página', logs.filter((l) => /estirar falló|PAGEERROR/.test(l)).join(' | '));
 const skippedLogs = logs.filter((l) => /omitido por atraso/.test(l)).length;
 check(skippedLogs >= 1, 'al pasar el límite se omiten frases viejas', `omitidas=${skippedLogs}`);

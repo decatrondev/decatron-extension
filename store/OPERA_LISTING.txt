@@ -1,0 +1,73 @@
+OPERA ADD-ONS (addons.opera.com) - DECATRON 0.3.0 - Opera y Opera GX
+Portal: https://addons.opera.com/developer/  (cuenta de desarrollador de Opera)
+Cada bloque es un campo del formulario. Copia y pega. Archivos en esta carpeta (store/).
+
+
+=====================================================================
+PAQUETE
+=====================================================================
+Subir:  decatron-chrome-0.3.0.zip   (raiz del repo; es el mismo de Chrome: Opera usa el formato de Chrome, no hace falta paquete aparte)
+
+
+=====================================================================
+FICHA
+=====================================================================
+
+--- Nombre ---
+Decatron
+
+--- Resumen (corto) ---
+Decatron en Twitch: escucha el stream en tu idioma y ve los emotes de 7TV, BTTV, FFZ y los de cada comunidad de Decatron.
+
+--- Descripcion ---
+Decatron reúne en un solo panel lo que Decatron hace por Twitch, en módulos que enciendes y apagas.
+
+• Traducción: en los canales que la ofrecen, escuchas al streamer doblado a tu idioma en tiempo real, con subtítulos sincronizados con la voz. Si el streamer habla seguido, la voz se acelera un poco sin cambiar el tono. También puedes verla solo con subtítulos, sin audio, y repetir cualquier frase reciente. Solo tú lo oyes.
+• Emotes: ve en el chat los emotes de 7TV, BetterTTV y FrankerFaceZ, y los propios y globales de Decatron, sin instalar otras extensiones. Incluye un selector: escribe «:» y las primeras letras para elegir un emote.
+• Próximamente: puntos de canal automáticos y más.
+
+Cómo usarlo: instala la extensión y abre un canal de Twitch. El botón de Decatron junto al engranaje del player abre el panel.
+
+Sin cuenta, sin anuncios. Tus preferencias se guardan en tu navegador.
+
+--- Descripcion (ingles, si pide idioma adicional) ---
+Decatron brings what Decatron does for Twitch into a single panel, in modules you can turn on and off.
+
+• Translation: on channels that offer it, hear the streamer dubbed into your language in real time, with captions synced to the voice. If the streamer talks non-stop, the voice speeds up slightly without changing pitch. You can also use captions only, with no audio, and repeat any recent phrase. Only you hear it.
+• Emotes: see 7TV, BetterTTV and FrankerFaceZ emotes in chat, plus Decatron's own and global ones, without installing other extensions. Includes a picker: type ":" and the first letters to choose an emote.
+• Coming soon: automatic channel points and more.
+
+How to use: install the extension and open a Twitch channel. The Decatron button next to the player's gear opens the panel.
+
+No account, no ads. Your preferences are stored in your browser.
+
+--- Categoria ---
+Entretenimiento / Social (la que ofrezca el selector; si hay "Entertainment" elegir esa)
+
+--- Icono (128x128) ---
+icon-128-chrome.png
+
+--- Capturas de pantalla ---
+screenshots/1-chat-con-emotes.png
+screenshots/2-panel-traduccion.png
+screenshots/3-panel-emotes.png
+(si pide un tamano concreto, son de 1280x800)
+
+--- Sitio web / soporte ---
+https://decatron.net/translate
+Correo de soporte: anthonydeca@decatron.net
+
+--- Politica de privacidad ---
+https://decatron.net/translate#privacy
+
+--- Notas de la version ---
+La traducción se pone al día sin cambiar la voz: si el streamer habla seguido, la voz se acelera un poco conservando el tono y, solo en último caso, se omiten frases con un aviso. Subtítulos sincronizados palabra por palabra con la voz. Nuevo modo «solo subtítulos» para ver sin audio. Historial de lo último dicho con botón para repetir una frase. Estado más claro: retraso aproximado, reconexión y botón de reintentar.
+
+
+=====================================================================
+NOTAS PARA EL MODERADOR (ingles, si hay campo para ello)
+=====================================================================
+No account or login is needed to test the extension. Open any live channel on https://www.twitch.tv; emotes render in the chat and typing ":" plus letters in the chat box opens the emote picker. The Decatron button next to the player's gear opens the panel.
+The translation option only appears on channels that have live translation enabled on Decatron; otherwise the panel shows "not available on this channel", which is the expected behavior.
+Permissions: storage, and host access only to twitch.tv, decatron.net, 7tv.io, api.betterttv.net, api.frankerfacez.com and gql.twitch.tv (to resolve the channel id). Only the channel being watched is sent; chat text is read locally to draw emotes and is never sent anywhere.
+Source: plain JavaScript, not minified or bundled. No remote code: decatron.net only returns numeric tuning values that the extension validates and clamps; nothing from the server is executed.

@@ -94,21 +94,60 @@
   }
 
   /**
+   * Valores de fábrica del modo alcance y de la interfaz. El servidor puede mandar otros (así se afinan
+   * sin publicar una versión en las tiendas); lo que llegue pasa por sanitizeTuning y, si algo no cuadra,
+   * se usa el valor de fábrica de ese campo. Solo datos: nada de lo que mande el servidor se ejecuta.
+   */
+  const DEFAULT_TUNING = Object.freeze({
+    aheadThresholds: [1.2, 2.5, 4.5],
+    rates: [1, 1.1, 1.18, 1.25],
+    maxBacklogSec: 8,
+    silentAfterSec: 25,
+    readCharsPerSec: 15,
+    readMinSec: 1.2,
+    readMaxSec: 8,
+    historyMax: 30,
+  });
+
+  /** Acepta lo que mande el servidor (camelCase) y devuelve siempre un objeto completo y dentro de límites. */
+  function sanitizeTuning(raw) {
+    const d = DEFAULT_TUNING;
+    const r = raw && typeof raw === "object" ? raw : {};
+    const num = (v, lo, hi, fb) => (typeof v === "number" && isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fb);
+    const arr = (v, n) => Array.isArray(v) && v.length === n && v.every((x) => typeof x === "number" && isFinite(x));
+    const th = arr(r.aheadThresholds, 3) && r.aheadThresholds.every((x) => x > 0 && x < 60) && r.aheadThresholds[0] < r.aheadThresholds[1] && r.aheadThresholds[1] < r.aheadThresholds[2]
+      ? r.aheadThresholds.slice() : d.aheadThresholds.slice();
+    const rates = arr(r.rates, 4) && r.rates.every((x) => x >= 1 && x <= 1.5) && r.rates[0] <= r.rates[1] && r.rates[1] <= r.rates[2] && r.rates[2] <= r.rates[3]
+      ? r.rates.slice() : d.rates.slice();
+    const readMin = num(r.readMinSec, 0.5, 5, d.readMinSec);
+    return {
+      aheadThresholds: th,
+      rates,
+      maxBacklogSec: num(r.maxBacklogSec, 3, 30, d.maxBacklogSec),
+      silentAfterSec: Math.round(num(r.silentAfterSec, 10, 180, d.silentAfterSec)),
+      readCharsPerSec: num(r.readCharsPerSec, 8, 40, d.readCharsPerSec),
+      readMinSec: readMin,
+      readMaxSec: num(r.readMaxSec, readMin, 20, d.readMaxSec),
+      historyMax: Math.round(num(r.historyMax, 5, 100, d.historyMax)),
+    };
+  }
+
+  /**
    * Modo alcance: cuánto acelerar según los segundos de audio que quedan por delante (lo que suena
    * más lo que espera). Escalonado y suave: hasta 1.25x, que con WSOLA todavía se entiende bien.
    */
-  function rateForAhead(aheadSec) {
-    if (aheadSec <= 1.2) return 1;
-    if (aheadSec <= 2.5) return 1.1;
-    if (aheadSec <= 4.5) return 1.18;
-    return 1.25;
+  function rateForAhead(aheadSec, tuning) {
+    const t = tuning && Array.isArray(tuning.aheadThresholds) ? tuning : DEFAULT_TUNING;
+    for (let i = 0; i < t.aheadThresholds.length; i++) if (aheadSec <= t.aheadThresholds[i]) return t.rates[i];
+    return t.rates[t.rates.length - 1];
   }
 
   /** Duración para mostrar un subtítulo sin audio: ritmo de lectura cómodo, más rápido si hay cola. */
-  function readSeconds(text, aheadSec) {
-    const base = Math.min(8, Math.max(1.2, String(text || "").length / 15));
-    return base / rateForAhead(aheadSec || 0);
+  function readSeconds(text, aheadSec, tuning) {
+    const t = tuning && typeof tuning.readCharsPerSec === "number" ? tuning : DEFAULT_TUNING;
+    const base = Math.min(t.readMaxSec, Math.max(t.readMinSec, String(text || "").length / t.readCharsPerSec));
+    return base / rateForAhead(aheadSec || 0, t);
   }
 
-  window.__decatronDsp = { wsola, voicedSpan, wordTimings, rateForAhead, readSeconds };
+  window.__decatronDsp = { wsola, voicedSpan, wordTimings, rateForAhead, readSeconds, sanitizeTuning, DEFAULT_TUNING };
 })();

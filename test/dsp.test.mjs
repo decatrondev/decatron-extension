@@ -88,5 +88,21 @@ for (const rate of [1.1, 1.18, 1.25, 1.5]) {
   const calm = D.readSeconds('x'.repeat(60), 0), busy = D.readSeconds('x'.repeat(60), 6);
   check(Math.abs(calm - 4) < 1e-9 && busy < calm, 'subtítulos sin audio: ritmo de lectura, más rápido con cola', `${calm.toFixed(2)} s → ${busy.toFixed(2)} s`);
 }
+// 8) Valores que manda el servidor: se validan y mandan sobre los de fábrica
+{
+  const def = D.sanitizeTuning(null);
+  check(def.rates.join(',') === '1,1.1,1.18,1.25' && def.aheadThresholds.join(',') === '1.2,2.5,4.5' && def.maxBacklogSec === 8 && def.silentAfterSec === 25, 'sin datos del servidor: valores de fábrica');
+  check(D.sanitizeTuning('basura').historyMax === 30 && D.sanitizeTuning(42).maxBacklogSec === 8 && D.sanitizeTuning([]).rates.length === 4, 'entradas raras no rompen nada');
+  const mine = D.sanitizeTuning({ aheadThresholds: [1, 2, 3], rates: [1, 1.15, 1.3, 1.4], maxBacklogSec: 6, silentAfterSec: 40, historyMax: 50 });
+  check(mine.rates[3] === 1.4 && mine.maxBacklogSec === 6 && mine.silentAfterSec === 40 && mine.historyMax === 50, 'valores válidos del servidor se respetan');
+  check(D.rateForAhead(1.5, mine) === 1.15 && D.rateForAhead(2.5, mine) === 1.3 && D.rateForAhead(9, mine) === 1.4 && D.rateForAhead(0.5, mine) === 1, 'la escala usa los umbrales y velocidades del servidor');
+  const evil = D.sanitizeTuning({ rates: [1, 2, 3, 4], aheadThresholds: [5, 1, 9], maxBacklogSec: 1e9, silentAfterSec: -5, readCharsPerSec: 0, historyMax: 1e6, readMinSec: 99, readMaxSec: 0 });
+  check(evil.rates.join(',') === '1,1.1,1.18,1.25' && evil.aheadThresholds.join(',') === '1.2,2.5,4.5', 'velocidades de 4x o umbrales desordenados se descartan');
+  check(evil.maxBacklogSec === 30 && evil.silentAfterSec === 10 && evil.readCharsPerSec === 8 && evil.historyMax === 100 && evil.readMaxSec >= evil.readMinSec, 'números absurdos se recortan a sus límites', JSON.stringify([evil.maxBacklogSec, evil.silentAfterSec, evil.readCharsPerSec, evil.historyMax]));
+  check(D.sanitizeTuning({ maxBacklogSec: NaN, silentAfterSec: Infinity }).maxBacklogSec === 8, 'NaN e Infinity vuelven a fábrica');
+  check(D.readSeconds('x'.repeat(60), 0, D.sanitizeTuning({ readCharsPerSec: 30 })) === 2, 'el ritmo de lectura también sale del servidor', String(D.readSeconds('x'.repeat(60), 0, D.sanitizeTuning({ readCharsPerSec: 30 }))));
+  const frozen = Object.isFrozen(D.DEFAULT_TUNING);
+  check(frozen && D.sanitizeTuning(null).rates !== D.DEFAULT_TUNING.rates, 'los valores de fábrica no se pueden alterar desde fuera');
+}
 console.log(fails === 0 ? '\nTODO OK' : `\n${fails} FALLAS`);
 process.exit(fails ? 1 : 0);
