@@ -39,6 +39,11 @@
       this.captionText = el("div", "dct-cap-text");
       this.captions.append(this.captionSource, this.captionText);
       playerRoot.appendChild(this.captions);
+
+      // Aviso breve y discreto (p. ej. "se omitieron 2 frases"): no tapa los subtítulos
+      this.notice = el("div", "dct-notice");
+      this.notice.hidden = true;
+      playerRoot.appendChild(this.notice);
       this.applyCaptionPrefs();
     }
 
@@ -53,7 +58,7 @@
       const fresh = this.rootProvider && this.rootProvider();
       if (fresh && fresh !== this.root) this.root = fresh;
       if (!this.root || !document.contains(this.root)) return false;
-      for (const n of [this.toast, this.captions]) if (!this.root.contains(n)) this.root.appendChild(n);
+      for (const n of [this.toast, this.captions, this.notice]) if (!this.root.contains(n)) this.root.appendChild(n);
       return true;
     }
 
@@ -62,9 +67,27 @@
       this.captionSource.hidden = !this.prefs.captionSource;
     }
 
-    /** Muestra un segmento; con duración, revela las palabras a ritmo del audio. */
-    showCaption(meta, durationSec) {
+    /** Aviso corto sobre el video; desaparece solo. */
+    showNotice(text, ms = 5000) {
+      if (this._noticeTimer) clearTimeout(this._noticeTimer);
+      this.ensureMounted();
+      this.notice.textContent = text;
+      this.notice.hidden = false;
+      this._noticeTimer = setTimeout(() => { this.notice.hidden = true; }, ms);
+    }
+
+    _clearCapTimers() {
       if (this._capTimer) { clearInterval(this._capTimer); this._capTimer = null; }
+      if (this._wordTimers) { for (const id of this._wordTimers) clearTimeout(id); this._wordTimers = null; }
+    }
+
+    /**
+     * Muestra un segmento. Con `timings` (inicio de cada palabra, en segundos desde que arranca
+     * el audio, según cuándo suena la voz) cada palabra se enciende en su momento; sin ellos,
+     * se reparten en partes iguales por la duración.
+     */
+    showCaption(meta, durationSec, timings) {
+      this._clearCapTimers();
       if (!meta || !this.prefs.captions) { this.captions.hidden = true; return; }
       this.ensureMounted();
       this.captionSource.textContent = meta.source || "";
@@ -75,6 +98,17 @@
       const spans = words.map((w) => { const s = el("span", "dct-w", w + " "); this.captionText.append(s); return s; });
       this.captions.hidden = false;
       if (!durationSec || words.length === 0) { spans.forEach((s) => s.classList.add("dct-on")); return; }
+      if (timings && timings.length === spans.length) {
+        // Por palabra, con la voz real. La primera sale ya; las demás en su instante.
+        this._wordTimers = [];
+        const t0 = timings[0];
+        spans.forEach((sp, i) => {
+          const at = Math.max(0, (timings[i] - t0) * 1000);
+          if (at < 20) sp.classList.add("dct-on");
+          else this._wordTimers.push(setTimeout(() => sp.classList.add("dct-on"), at));
+        });
+        return;
+      }
       // Sin tiempos por palabra del TTS: se reparten uniformes, y se deja el último 15 % de margen.
       const per = (durationSec * 0.85 * 1000) / words.length;
       let i = 0;
@@ -86,9 +120,11 @@
     }
 
     destroy() {
-      if (this._capTimer) clearInterval(this._capTimer);
+      this._clearCapTimers();
+      if (this._noticeTimer) clearTimeout(this._noticeTimer);
       this.captions.remove();
       this.toast.remove();
+      this.notice.remove();
     }
   }
 

@@ -5,6 +5,11 @@
 // nunca encimados. Mientras suena uno, el <video> de Twitch baja al "volumen de fondo";
 // cuando no hay nada en cola vuelve a su volumen (ducking inverso), así el juego se oye
 // cuando el streamer calla.
+//
+// Modo alcance: si el streamer habla seguido y la cola crece, la voz se acelera de forma
+// escalonada hasta 1.25x SIN subirle el tono (WSOLA, ver dsp.js); solo si aun así el atraso
+// pasa del límite se descartan las frases más viejas, y se avisa (ondrop) y quedan en el
+// historial. Con captionsOnly no suena nada: solo subtítulos, mostrados apenas llegan.
 (function () {
   class TranslationPlayer {
     constructor(video) {
@@ -16,13 +21,17 @@
       this.chunks = new Map();  // seq -> { parts: [], meta }
       this.backgroundVolume = 0.15;
       this.delaySec = 0;        // retraso extra para cuadrar con el video
-      // Control de atraso: si la cola crece (el streamer habla seguido) se acelera un
-      // poco y, pasado un límite, se descartan las frases más viejas (quedan como
-      // subtítulo). Mejor perder una frase que ir un minuto detrás del video.
-      this.maxBacklogSec = 6;
-      this.speedUpAboveSec = 1.5;
-      this.fastRate = 1.15;
+      // Control de atraso: se acelera por escalones (dsp.rateForAhead) y, pasado este límite
+      // de audio en cola, se descartan las frases más viejas. Mejor perder una frase que ir
+      // un minuto detrás del video.
+      this.maxBacklogSec = 8;
+      this.captionsOnly = false;  // solo subtítulos, sin audio ni ducking
+      this.recent = new Map();    // seq -> { buffer, meta }: las últimas frases, para "repetir"
+      this._playEndsAt = 0;       // currentTime del contexto en que termina lo que suena
       this.stats = { played: 0, dropped: 0, lastDelay: 0 };
+      this.ondrop = null;         // ({seq, meta, reason}) una frase se omitió (cola larga o servidor)
+      this.onlag = null;          // (segundos) retraso estimado de la última frase respecto a cuando se dijo
+      this.onbuffer = null;       // (seq, tieneAudio) el audio de una frase quedó listo (o no hubo)
       this.userVolume = video ? video.volume : 1;
       this.onsegment = null;    // (meta|null, durationSec) → subtítulos
       this.onaudioblocked = null; // (bool) el navegador no deja sonar hasta un gesto del usuario
@@ -93,7 +102,7 @@
 
     setOutputVolume(v) { if (this.gain) this.gain.gain.value = v; this._outVol = v; }
 
-    start(meta) { this.chunks.set(meta.seq, { parts: [], meta }); }
+    start(meta) { this.chunks.set(meta.seq, { parts: [], meta, startedAt: performance.now() }); }
 
     chunk(seq, b64) {
       const e = this.chunks.get(seq);
@@ -110,9 +119,11 @@
       if (!e) return;
       if (error || e.parts.length === 0) {
         // Sin audio: al menos el subtítulo, un rato proporcional al texto.
+        this.onbuffer && this.onbuffer(seq, false);
         this._showOnly(e.meta);
         return;
       }
+      if (this.captionsOnly) { this._enqueueSilent(seq, e); return; }
       const running = await this.ensureContext();
       const total = e.parts.reduce((n, p) => n + p.length, 0);
       const joined = new Uint8Array(total);
@@ -126,25 +137,95 @@
       }
       let buffer;
       try { buffer = await this.ctx.decodeAudioData(joined.buffer); }
-      catch (err) { console.info("[decatron] decodeAudioData falló:", err && err.message, "bytes:", total); this._showOnly(e.meta); return; }
-      console.info(`[decatron] seg ${seq}: ${total} bytes → ${buffer.duration.toFixed(2)}s de audio; ctx=${this.ctx.state}; en cola=${this.queue.length}; reproduciendo=${this.playing ? this.playing.seq : "-"}`);
-      this.queue.push({ seq, buffer, meta: e.meta, arrivedAt: performance.now() });
+      catch (err) { console.info("[decatron] decodeAudioData falló:", err && err.message, "bytes:", total); this.onbuffer && this.onbuffer(seq, false); this._showOnly(e.meta); return; }
+      // Se guarda tal como llegó (a velocidad normal) para poder repetirla.
+      this.recent.set(seq, { buffer, meta: e.meta });
+      while (this.recent.size > 6) this.recent.delete(this.recent.keys().next().value);
+      this.onbuffer && this.onbuffer(seq, true);
+
+      // Modo alcance: según cuánto audio hay por delante, se acelera sin subir el tono.
+      let fallbackRate = 1;
+      const rate = window.__decatronDsp.rateForAhead(this._aheadSec());
+      if (rate > 1) {
+        try { buffer = this._stretch(buffer, rate); }
+        catch (err) { console.info("[decatron] estirar falló, uso playbackRate:", err && err.message); fallbackRate = rate; }
+      }
+      const timings = this._timings(e.meta, buffer, fallbackRate);
+      console.info(`[decatron] seg ${seq}: ${total} bytes → ${buffer.duration.toFixed(2)}s de audio (x${rate}); ctx=${this.ctx.state}; en cola=${this.queue.length}; reproduciendo=${this.playing ? this.playing.seq : "-"}`);
+      this.queue.push({ seq, buffer, meta: e.meta, arrivedAt: performance.now(), startedAt: e.startedAt, rate, fallbackRate, timings });
       this.queue.sort((a, b) => a.seq - b.seq);
       this._trimBacklog();
       this._pump();
     }
 
-    dropped(seq) { this.chunks.delete(seq); this.queue = this.queue.filter(q => q.seq !== seq); }
+    /** Frase solo con subtítulo (modo sin audio): entra a la misma cola, dura lo que se tarda en leerla. */
+    _enqueueSilent(seq, e) {
+      const dur = window.__decatronDsp.readSeconds(e.meta.text, this._aheadSec());
+      this.queue.push({ seq, silent: true, dur, meta: e.meta, arrivedAt: performance.now(), startedAt: e.startedAt, rate: 1, fallbackRate: 1 });
+      this.queue.sort((a, b) => a.seq - b.seq);
+      this._trimBacklog();
+      this._pump();
+    }
 
-    _backlogSec() { return this.queue.reduce((n, q) => n + (q.buffer ? q.buffer.duration : 2), 0); }
+    /** El servidor descartó esta frase (cola llena o ya muy vieja). */
+    dropped(seq, reason) {
+      this.chunks.delete(seq);
+      const hit = this.queue.find(q => q.seq === seq);
+      this.queue = this.queue.filter(q => q.seq !== seq);
+      this.stats.dropped++;
+      this.ondrop && this.ondrop({ seq, meta: hit ? hit.meta : null, reason: reason || "server" });
+    }
+
+    _itemSec(q) { return q.silent ? q.dur : (q.buffer ? q.buffer.duration : 2); }
+    _backlogSec() { return this.queue.reduce((n, q) => n + this._itemSec(q), 0); }
+
+    /** Segundos de audio por delante: lo que queda de la frase que suena más lo que espera. */
+    _aheadSec() {
+      let cur = 0;
+      if (this.playing && this.ctx) cur = Math.max(0, this._playEndsAt - this.ctx.currentTime);
+      else if (this.playing && this.playing.silent) cur = Math.max(0, (this._silentEndsAt || 0) - performance.now()) / 1000;
+      return cur + this._backlogSec();
+    }
+
+    _stretch(buffer, rate) {
+      const Dsp = window.__decatronDsp;
+      const len = Math.max(1, Math.floor(buffer.length / rate));
+      const out = this.ctx.createBuffer(buffer.numberOfChannels, len, buffer.sampleRate);
+      for (let c = 0; c < buffer.numberOfChannels; c++) {
+        const y = Dsp.wsola(buffer.getChannelData(c), buffer.sampleRate, rate);
+        out.copyToChannel(y.length > len ? y.subarray(0, len) : y, c);
+      }
+      return out;
+    }
+
+    /** Inicio de cada palabra del subtítulo según cuándo suena la voz (segundos desde que arranca el audio). */
+    _timings(meta, buffer, rate) {
+      try {
+        const Dsp = window.__decatronDsp;
+        const span = Dsp.voicedSpan(buffer.getChannelData(0), buffer.sampleRate);
+        const k = rate > 1 ? 1 / rate : 1;   // con playbackRate de respaldo el tiempo real es menor
+        return Dsp.wordTimings(meta.text, { start: span.start * k, end: span.end * k });
+      } catch { return null; }
+    }
 
     _trimBacklog() {
       while (this.queue.length > 1 && this._backlogSec() > this.maxBacklogSec) {
         const old = this.queue.shift();
         this.stats.dropped++;
-        console.info(`[decatron] ✂ seg ${old.seq} descartado por atraso (cola ${this._backlogSec().toFixed(1)}s)`);
-        this.onsegment && this.onsegment(old.meta, 0.8);
+        console.info(`[decatron] ✂ seg ${old.seq} omitido por atraso (cola ${this._backlogSec().toFixed(1)}s)`);
+        this.ondrop && this.ondrop({ seq: old.seq, meta: old.meta, reason: "backlog" });
       }
+    }
+
+    /** Vuelve a reproducir una de las últimas frases (a velocidad normal) sin esperar la cola. */
+    replay(seq) {
+      const r = this.recent.get(seq);
+      if (!r || !this.ctx || this.captionsOnly) return false;
+      this.queue = this.queue.filter(q => q.seq !== -seq);
+      // Número negativo: va delante de lo que espera y no se confunde con la frase original.
+      this.queue.unshift({ seq: -seq, buffer: r.buffer, meta: r.meta, arrivedAt: performance.now(), rate: 1, fallbackRate: 1, timings: this._timings(r.meta, r.buffer, 1), replay: true });
+      this._pump();
+      return true;
     }
 
     _showOnly(meta) {
@@ -155,21 +236,22 @@
 
     _pump() {
       if (this.playing || this.queue.length === 0) return;
+      if (this.queue[0].silent) { this._pumpSilent(); return; }
       if (!this.ctx || this.ctx.state !== "running") { this._pumpElement(); return; }
       if (this.queue[0].blob) { this._pumpElement(); return; }
       const item = this.queue.shift();
       this.playing = item;
       const src = this.ctx.createBufferSource();
       src.buffer = item.buffer;
-      const backlog = this._backlogSec();
-      src.playbackRate.value = backlog > this.speedUpAboveSec ? this.fastRate : 1;
+      src.playbackRate.value = item.fallbackRate || 1;
       src.connect(this.gain);
       const when = this.ctx.currentTime + Math.max(0, this.delaySec);
+      this._playEndsAt = when + item.buffer.duration / (item.fallbackRate || 1);
       const startInMs = Math.max(0, this.delaySec) * 1000;
       setTimeout(() => {
         if (this.playing !== item) return;
         this._duck(true);
-        this.onsegment && this.onsegment(item.meta, item.buffer.duration);
+        this.onsegment && this.onsegment(item.meta, item.buffer.duration / (item.fallbackRate || 1), item.timings);
       }, startInMs);
       src.onended = () => {
         if (this.playing === item) this.playing = null;
@@ -184,12 +266,37 @@
       this._current = src;
       this.onaudioblocked && this.onaudioblocked(false); // está sonando de verdad: sin aviso
       const waited = item.arrivedAt ? (performance.now() - item.arrivedAt) / 1000 : 0;
+      if (!item.replay) this._reportLag(item);
       const sinceStt = item.meta.sttAt ? (Date.now() - new Date(item.meta.sttAt).getTime()) / 1000 : null;
       this.stats.played++; this.stats.lastDelay = sinceStt;
       const sttLag = item.meta.sttLag;
       const streamLag = item.meta.streamLag;
-      console.info(`[decatron] ▶ seg ${item.seq} (${item.buffer.duration.toFixed(2)}s, x${src.playbackRate.value}) app→servidor atraso ${streamLag == null ? "n/d" : streamLag.toFixed(1) + "s"}; STT cerró ${sttLag == null ? "n/d" : sttLag.toFixed(1) + "s"} tras callar; servidor→aquí ${sinceStt == null ? "n/d" : sinceStt.toFixed(1) + "s"}; cola ${waited.toFixed(1)}s`);
+      console.info(`[decatron] ▶ seg ${item.seq} (${item.buffer.duration.toFixed(2)}s, x${item.rate || 1}${item.fallbackRate > 1 ? " (playbackRate)" : ""}) app→servidor atraso ${streamLag == null ? "n/d" : streamLag.toFixed(1) + "s"}; STT cerró ${sttLag == null ? "n/d" : sttLag.toFixed(1) + "s"} tras callar; servidor→aquí ${sinceStt == null ? "n/d" : sinceStt.toFixed(1) + "s"}; cola ${waited.toFixed(1)}s`);
 
+    }
+
+    /** Retraso aproximado de esta frase: lo que tardó el servidor (STT + cola + traducción) más lo que esperó aquí, sin depender del reloj de la PC. */
+    _reportLag(item) {
+      const m = item.meta || {};
+      const clientWait = item.startedAt ? (performance.now() - item.startedAt) / 1000 : 0;
+      const lag = (m.sttLag == null ? 0 : Math.max(0, m.sttLag)) + (m.ageMs || 0) / 1000 + clientWait + Math.max(0, this.delaySec);
+      this.stats.lastLag = lag;
+      this.onlag && this.onlag(lag);
+    }
+
+    _pumpSilent() {
+      const item = this.queue.shift();
+      this.playing = item;
+      this.onsegment && this.onsegment(item.meta, item.dur);
+      this._silentEndsAt = performance.now() + item.dur * 1000;
+      this._reportLag(item);
+      this.stats.played++;
+      this._silentTimer = setTimeout(() => {
+        if (this.playing === item) this.playing = null;
+        if (this.queue.length === 0) {
+          this._rampTimer = setTimeout(() => { if (!this.playing && this.queue.length === 0) this.onsegment && this.onsegment(null, 0); }, 400);
+        } else this._pump();
+      }, item.dur * 1000);
     }
 
     // Vía alternativa: un <audio> por segmento. Misma cola, mismo ducking. Se usa cuando
@@ -259,6 +366,7 @@
     stop() {
       this.queue = [];
       this.chunks.clear();
+      if (this._silentTimer) { clearTimeout(this._silentTimer); this._silentTimer = null; }
       try { this._current && this._current.stop(); } catch {}
       try { if (this._currentEl) { this._currentEl.pause(); this._currentEl.src = ""; } } catch {}
       this.playing = null;

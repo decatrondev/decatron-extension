@@ -1,12 +1,14 @@
 {
   "name": "decatron-extension",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "private": true,
   "description": "Extensión de navegador de Decatron para Twitch: traducción, emotes y más, por módulos",
   "type": "module",
   "scripts": {
     "test:video": "ffmpeg -y -loglevel error -f lavfi -i testsrc=size=640x360:rate=15 -f lavfi -i sine=frequency=330:sample_rate=44100 -t 120 -c:v libvpx -b:v 300k -c:a libopus test/fake-stream.webm",
     "test:dict": "node test/dict.test.mjs",
+    "test:dsp": "node test/dsp.test.mjs",
+    "test:catchup": "node test/e2e-catchup.mjs",
     "test:e2e": "node test/e2e.mjs",
     "test:twitch": "node test/e2e-twitch.mjs",
     "test:picker": "node test/e2e-picker.mjs",

@@ -44,7 +44,7 @@
 @media (prefers-reduced-motion: reduce) { .dct-w { transition: none; } }
 
 /* El atributo hidden pierde contra cualquier display: propio; se reafirma. */
-.dct-toast[hidden], .dct-captions[hidden], .dct-btn-wrap[hidden] { display: none !important; }
+.dct-toast[hidden], .dct-captions[hidden], .dct-btn-wrap[hidden], .dct-notice[hidden] { display: none !important; }
 
 /* Aviso de audio bloqueado por el navegador */
 .dct-toast {
@@ -61,3 +61,12 @@
 }
 .dct-toast-btn:hover { background: #a970ff; }
 .dct-toast-btn:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+
+/* Aviso breve (frases omitidas, etc.): arriba a la izquierda, discreto */
+.dct-notice {
+  position: absolute; left: 16px; top: 16px; z-index: 6000; max-width: min(60%, 420px);
+  padding: 8px 12px; border-radius: 8px; pointer-events: none;
+  background: rgba(24,24,27,.88); color: #efeff1; border: 1px solid #2f2f35;
+  font-family: inherit; font-size: 13px; line-height: 1.35;
+  transform: translateZ(0);
+}

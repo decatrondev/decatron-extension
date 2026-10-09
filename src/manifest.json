@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Decatron",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "Decatron en Twitch: escucha el stream en tu idioma y ve los emotes de 7TV, BTTV, FFZ y los de cada comunidad de Decatron.",
   "default_locale": "es",
   "icons": {
@@ -42,6 +42,7 @@
         "core.js",
         "kit.js",
         "signalr-lite.js",
+        "dsp.js",
         "audio.js",
         "captions-ui.js",
         "shell.js",

@@ -5,7 +5,7 @@
 
   /** Valores de fábrica. Las claves de traducción siguen planas (así se guardaban en la 0.1.x y nadie pierde lo suyo). */
   const DEFAULT_PREFS = {
-    preferredLang: null, backgroundVolume: 0.15, delaySec: 0, captions: true, captionSource: false, captionSize: 22, autoJoin: true,
+    preferredLang: null, backgroundVolume: 0.15, delaySec: 0, captions: true, captionSource: false, captionSize: 22, autoJoin: true, captionsOnly: false,
     modules: {},
   };
 
