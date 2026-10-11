@@ -1,114 +1,140 @@
-# Decatron — extensión de navegador para Twitch
+# Decatron — browser extension for Twitch
 
-Una extensión con **módulos**: cada función de Decatron en Twitch es un módulo que se enciende y apaga solo, todos dentro de
-un mismo panel. Funciona en Chrome, Edge, Brave y Opera; hay un paquete para Firefox (ver más abajo).
+[Español](README.es.md)
 
-| Módulo | Estado | Qué hace |
+An extension with **modules**: each Decatron feature on Twitch is a module that you turn on and off on its
+own, all inside a single panel. It works on Chrome, Edge, Brave and Opera; there is a package for Firefox
+(see below). Public page: <https://decatron.net/translate>.
+
+| Module | Status | What it does |
 |---|---|---|
-| **Traducción** | ✅ | Escucha el stream en tu idioma con el doblaje de [Decatron Translate](https://decatron.net/translate). Solo tú lo oyes. |
-| **Emotes** | ✅ | Dibuja en el chat los emotes de **7TV, BetterTTV, FrankerFaceZ** y los **propios de Decatron** (los que sube la comunidad de cada canal), sin instalar otras extensiones. Incluye el selector con `:`. |
-| **Puntos de canal** | 🔜 | Cobrar solo el bonus de puntos del canal y más automatismos. |
+| **Translation** | ✅ | Listen to the stream in your language with the dubbing of [Decatron live translation](https://decatron.net/docs/translation). Only you hear it. |
+| **Emotes** | ✅ | Draws **7TV, BetterTTV, FrankerFaceZ** and **Decatron's own** emotes (the ones each channel's community uploads) in chat, without installing other extensions. Includes the `:` picker. |
+| **Channel points** | 🔜 | Claim the channel points bonus automatically and more automations. |
 
-## Cómo se usa
+## How to use it
 
-- Un botón de Decatron en la barra del player abre el **panel** (un modal dentro de Twitch) con una pestaña por módulo y
-  un interruptor para encender o apagar cada uno.
-- El icono de la barra del navegador abre un popup corto: el estado del canal, los interruptores de los módulos y un
-  atajo al panel.
-- Todo se guarda en `chrome.storage.sync`; el idioma de la traducción por canal, en `chrome.storage.local`.
+- A Decatron button in the player bar opens the **panel** (a modal inside Twitch) with one tab per module and
+  a switch to turn each one on or off.
+- The browser toolbar icon opens a short popup: the channel status, the module switches and a shortcut to
+  the panel.
+- Everything is saved in `chrome.storage.sync`; the translation language per channel, in
+  `chrome.storage.local`.
 
 ### Emotes
 
-- Al abrir un canal se arma su diccionario: los emotes propios de Decatron (`decatron.net/api/public/emotes/<canal>`) y los de 7TV, BTTV y
-  FFZ (globales y del canal) **directo desde el navegador a cada servicio**. Prioridad ante un mismo nombre: propios de Decatron >
-  7TV > BTTV > FFZ, y lo del canal sobre lo global (la misma que usa el overlay de chat de Decatron).
-- Las palabras del chat que coinciden con un emote pasan a ser imágenes; los emotes nativos de Twitch no se tocan. Los emotes
-  «encima del anterior» (zero-width: sombreros, efectos) se apilan sobre el emote de antes.
-- Convive con FrankerFaceZ, BTTV y 7TV: dibuja lo que esas extensiones dejan como texto (por ejemplo los emotes de 7TV si solo tienes FFZ, o los propios de Decatron), sin duplicar los que ellas ya reemplazaron. FFZ rehace las líneas del chat con otro HTML (`span.message`); también se soporta. Si prefieres, en el panel se puede elegir dibujar solo los propios.
-- **Selector con `:`**: escribe `:` y las primeras letras en la caja de chat; flechas, Enter o Tab (o un clic) para elegir.
-  La caja de Twitch es un editor Slate: el texto se inserta con un evento `beforeinput`, con respaldo por pegado.
-- Los demás ven estos emotes en el chat solo si también tienen una extensión que los dibuje; en el overlay del stream se ven siempre.
+- When a channel is opened, its dictionary is built: Decatron's own emotes
+  (`decatron.net/api/public/emotes/<channel>`) and those of 7TV, BTTV and FFZ (global and channel)
+  **straight from the browser to each service**. Priority for the same name: Decatron own > 7TV > BTTV > FFZ,
+  and channel over global (the same one the Decatron chat overlay uses). The Decatron global set has the
+  lowest priority.
+- Chat words that match an emote become images; native Twitch emotes are not touched. "On top of the
+  previous one" (zero-width) emotes, such as hats and effects, are stacked on the emote before.
+- It coexists with FrankerFaceZ, BTTV and 7TV: it draws what those extensions leave as text (for example
+  7TV emotes if you only have FFZ, or Decatron's own), without duplicating the ones they already replaced.
+  FFZ rebuilds chat lines with different HTML (`span.message`); that is supported too. If you prefer, the
+  panel can be set to draw only Decatron's own.
+- **`:` picker**: type `:` and the first letters in the chat box; arrows, Enter or Tab (or a click) to
+  choose. Twitch's box is a Slate editor: the text is inserted with a `beforeinput` event, with a paste
+  fallback.
+- Other viewers see these emotes in chat only if they also have an extension that draws them; in the stream
+  overlay they are always visible.
 
-## Estructura
+## Structure
 
 ```
 src/
   manifest.json
-  background.js        service worker: fetch al backend (CORS), diccionarios de emotes, badge
-  emote-dict.js        diccionario de emotes (propios + 7TV + BTTV + FFZ), compartido con las pruebas de Node
-  i18n.js              textos en español e inglés (según el idioma del navegador)
-  core.js              preferencias, registro de módulos, eventos y utilidades (window.__decatron)
-  kit.js               piezas de formulario de los paneles
-  shell.js + panel.css botón del player y panel (Shadow DOM)
+  background.js        service worker: fetch to the backend (CORS), emote dictionaries, badge
+  emote-dict.js        emote dictionary (own + 7TV + BTTV + FFZ), shared with the Node tests
+  i18n.js              texts in Spanish and English (by browser language)
+  core.js              preferences, module registry, events and utilities (window.__decatron)
+  kit.js               form pieces for the panels
+  shell.js + panel.css player button and panel (Shadow DOM)
   modules/             translation.js · emotes.js · points.js
-  emote-picker.js      selector con ":"
-  captions-ui.js       subtítulos y aviso de audio sobre el video (traducción)
-  audio.js, signalr-lite.js
-  main.js              arranque, módulos y navegación SPA de Twitch
-  popup.*              popup de la barra del navegador
+  emote-picker.js      the ":" picker
+  captions-ui.js       captions and audio notice over the video (translation)
+  audio.js, dsp.js, signalr-lite.js
+  main.js              startup, modules and Twitch SPA navigation
+  popup.*              browser toolbar popup
 ```
 
-**Cómo agregar un módulo:** un archivo en `src/modules/` que llame a `window.__decatron.register({ id, order, icon, defaults, name,
-description, start, stop, onChannel(login), status, renderPanel(body) })`, y listarlo en `content_scripts` del manifest. El panel, el
-popup, el interruptor y el guardado de ajustes salen solos.
+**How to add a module:** one file in `src/modules/` that calls
+`window.__decatron.register({ id, order, icon, defaults, name, description, start, stop, onChannel(login),
+status, renderPanel(body) })`, and list it in the manifest's `content_scripts`. The panel, popup, switch
+and settings saving come for free.
 
-## Permisos
+## Permissions
 
-Solo `storage`, y acceso a: `twitch.tv` (la página), `decatron.net` (traducción y emotes propios), `7tv.io`, `api.betterttv.net`
-y `api.frankerfacez.com` (sus emotes) y `gql.twitch.tv` (el id del canal, que 7TV y BTTV piden por id). Sin cuenta ni login.
+Only `storage`, and access to: `twitch.tv` (the page), `decatron.net` (translation and own emotes),
+`7tv.io`, `api.betterttv.net` and `api.frankerfacez.com` (their emotes) and `gql.twitch.tv` (the channel
+id, which 7TV and BTTV ask for by id). No account or login.
 
-## Instalar en modo desarrollador
+## Install in developer mode
 
-1. `chrome://extensions` → activar «Modo de desarrollador».
-2. «Cargar descomprimida» → carpeta `src/`.
+1. `chrome://extensions` → turn on "Developer mode".
+2. "Load unpacked" → the `src/` folder.
 
-## Paquetes
+Store listings (Chrome Web Store, Firefox Add-ons and Opera Add-ons) are prepared in `store/`; the
+`/translate` page enables each store button when that store publishes the extension.
+
+## Packages
 
 ```
-npm run pack           # decatron-chrome-<versión>.zip
-npm run pack:firefox   # decatron-firefox-<versión>.zip (manifest con background.scripts e id de Firefox)
+npm run pack           # decatron-chrome-<version>.zip
+npm run pack:firefox   # decatron-firefox-<version>.zip (manifest with background.scripts and the Firefox id)
 ```
 
-El paquete de Firefox pasa `web-ext lint` sin errores, pero **no se ha probado dentro de Firefox**.
+The Firefox package passes `web-ext lint` with no errors, but it **has not been tested inside Firefox**.
 
-## Pruebas
+## Tests
 
 ```
 npm i
-npm run test:dict      # diccionario de emotes contra 7TV, BTTV, FFZ y Twitch reales (necesita red)
-npm run test:twitch -- <canal-en-vivo>   # botón, panel, carga de emotes y reemplazo contra el Twitch REAL (chat público)
-npm run test:picker    # selector con ":" contra un editor Slate de verdad
-npm run test:ffz -- <canal-en-vivo>   # junto a FrankerFaceZ (carga su script en el Twitch real)
-npm run test:video && npm run test:e2e   # traducción contra una réplica del player (con DURATION=3 solo mira la interfaz)
-npm run test:dsp       # estiramiento de voz (WSOLA), tiempos de subtítulos y validación de los valores del servidor; sin red
-npm run test:catchup   # modo alcance, historial, repetir y solo subtítulos en Chromium real con un hub simulado (necesita ffmpeg)
+npm run test:dict      # emote dictionary against real 7TV, BTTV, FFZ and Twitch (needs network)
+npm run test:twitch -- <live-channel>   # button, panel, emote loading and replacement against the REAL Twitch (public chat)
+npm run test:picker    # ":" picker against a real Slate editor
+npm run test:ffz -- <live-channel>      # next to FrankerFaceZ (loads its script on the real Twitch)
+npm run test:video && npm run test:e2e   # translation against a replica of the player (with DURATION=3 it only checks the interface)
+npm run test:dsp       # voice stretching (WSOLA), caption timings and validation of the server values; no network
+npm run test:catchup   # catch-up mode, history, replay and captions-only in a real Chromium with a simulated hub (needs ffmpeg)
 ```
 
-`test:twitch` inyecta líneas con la forma del chat de Twitch en el contenedor real para comprobar el reemplazo; no puede escribir en la
-caja de chat porque sin sesión Twitch no la deja usar (por eso el selector se prueba aparte, contra Slate).
-Hace falta un Chromium (`CHROME=/ruta/al/chrome` o el de Playwright).
+`test:twitch` injects lines shaped like Twitch chat into the real container to check the replacement; it
+cannot write in the chat box because Twitch does not let it be used without a session (that is why the
+picker is tested separately, against Slate). A Chromium is needed (`CHROME=/path/to/chrome` or
+Playwright's).
 
-## Cómo funciona la traducción
+## How translation works
 
 ```
-twitch.tv/<canal> ── content script ──► GET decatron.net/api/live-translation/public/<canal>
-                                     ──► wss://decatron.net/hubs/translation  (SignalR, JSON)
-                                            Join(canal, idioma) → Status / SegmentStart / SegmentChunk / SegmentEnd
+twitch.tv/<channel> ── content script ──► GET decatron.net/api/live-translation/public/<channel>
+                                       ──► wss://decatron.net/hubs/translation  (SignalR, JSON)
+                                              Join(channel, language) → Status / SegmentStart / SegmentChunk / SegmentEnd
 ```
 
-El audio llega en trozos MP3, se decodifica con Web Audio y se encola en orden; el volumen del `<video>` se controla directamente
-(ducking inverso con rampa). Los subtítulos revelan las palabras al ritmo del audio.
+The audio arrives in MP3 chunks, is decoded with Web Audio and queued in order; the `<video>` volume is
+controlled directly (inverse ducking with a ramp). Captions reveal the words at the pace of the audio.
 
-### Modo alcance, historial y solo subtítulos (0.3.0)
+### Catch-up mode, history and captions only (0.3.0)
 
-- **Modo alcance** (`audio.js`, `dsp.js`): según los segundos de audio que quedan por delante, la voz se acelera por escalones sin
-  subirle el tono (WSOLA, no `playbackRate`). Solo si la cola pasa del límite se omiten las frases más viejas: se avisa sobre el video
-  y quedan marcadas en el historial. El servidor también omite lo que ya esperó demasiado (`SegmentDropped`, motivo `stale`).
-- **Subtítulos**: cada palabra se enciende según cuándo suena la voz (`dsp.wordTimings`). Con «solo subtítulos» no suena nada y el texto
-  sale al llegar, a ritmo de lectura.
-- **Historial** (`modules/translation.js`): las últimas frases con botón para repetir las que aún tienen audio guardado (las 6 últimas).
-- **Valores ajustables desde el servidor**: la consulta pública del canal trae `tuning` (umbrales y velocidades del modo alcance, límite
-  de cola, tiempos). Se editan en `LiveTranslation:ClientTuning` de `appsettings.json` del bot y se recargan solos, **sin publicar
-  versión en las tiendas**. Son solo datos: `dsp.sanitizeTuning` los valida y los recorta a límites fijos (velocidad máx. 1.5x), y si algo
-  no cuadra usa el valor de fábrica. Nada que venga del servidor se ejecuta.
+- **Catch-up mode** (`audio.js`, `dsp.js`): according to the seconds of audio still ahead, the voice speeds
+  up in steps without raising the pitch (WSOLA, not `playbackRate`). Only if the queue goes over the limit
+  are the oldest phrases skipped: a notice is shown over the video and they are marked in the history. The
+  server also skips what has already waited too long (`SegmentDropped`, reason `stale`).
+- **Captions**: each word lights up according to when the voice plays it (`dsp.wordTimings`). With "captions
+  only" nothing plays and the text appears on arrival, at reading pace.
+- **History** (`modules/translation.js`): the latest phrases with a button to replay those whose audio is
+  still stored (the last 6).
+- **Values adjustable from the server**: the public channel query returns `tuning` (catch-up thresholds and
+  speeds, queue limit, times). They are edited in `LiveTranslation:ClientTuning` of the bot's
+  `appsettings.json` and reload on their own, **without publishing a version to the stores**. They are data
+  only: `dsp.sanitizeTuning` validates them and clips them to fixed limits (max speed 1.5x), and if
+  something does not fit it uses the factory value. Nothing that comes from the server is executed.
 
+## Backend and manual
+
+The server side lives in the bot repository ([`decatrondev/decatron`](https://github.com/decatrondev/decatron)):
+`TranslationHub`, `LiveTranslationController`, `PublicEmotesController` and the emote catalog. User guides:
+<https://decatron.net/docs/translation> (viewer extension page) and <https://decatron.net/docs/chat>
+(emotes).
