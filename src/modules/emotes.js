@@ -43,6 +43,8 @@
       applySize();
       lastFlags = JSON.stringify(providerFlags());
       mod.watchTimer = setInterval(watchChat, 1000);
+      mod.refreshTimer = setInterval(refreshQuietly, REFRESH_MS);
+      connectLive();
       mod.picker = new window.__decatronEmotePicker(() => (mod.settings().picker ? effectiveEntries() : []));
       mod.picker.start();
       mod.listener = D.on("module-settings", onSettings);
@@ -51,6 +53,9 @@
     stop() {
       if (mod.watchTimer) clearInterval(mod.watchTimer);
       mod.watchTimer = null;
+      if (mod.refreshTimer) clearInterval(mod.refreshTimer);
+      mod.refreshTimer = null;
+      disconnectLive();
       if (mod.observer) mod.observer.disconnect();
       mod.observer = null;
       mod.watched = null;
@@ -69,7 +74,7 @@
       mod.dict = new Map();
       mod.entries = [];
       mod.setState({ status: login ? "loading" : "idle", count: 0 });
-      if (login) load(login, false);
+      if (login) { load(login, false); if (mod.watchLive) mod.watchLive(); }
     },
 
     // ───────────── panel
@@ -140,6 +145,56 @@
     mod.setState({ status: "ready", count: r.entries.length });
     // Los mensajes que ya estaban en pantalla antes de tener el diccionario
     reprocessAll();
+  }
+
+  // Un emote nuevo (subido a Decatron, 7TV, BTTV o FFZ) tiene que verse sin recargar la página ni abrir el panel:
+  // cada REFRESH_MS se vuelve a pedir el diccionario sin usar la caché y, si cambió, se redibuja el chat.
+  const REFRESH_MS = 20 * 1000;
+  let refreshing = false;
+  let refreshAgain = false;
+  const signature = (entries) => entries.map((e) => e.n + "|" + e.u + "|" + (e.z ? 1 : 0)).sort().join("\n");
+
+  // Aviso en vivo del servidor: cuando cambia un emote de Decatron (propio o global) la pestaña lo sabe al instante
+  const HUB = "wss://decatron.net/hubs/emotes";
+  function connectLive() {
+    if (mod.live || !window.__decatronSignalR) return;
+    const hub = new window.__decatronSignalR(HUB);
+    mod.live = hub;
+    const watch = () => { if (D.channel) hub.invoke("Watch", D.channel).catch(() => {}); };
+    mod.watchLive = watch;
+    hub.onstate = (st) => { if (st === "connected") watch(); };
+    hub.on("EmotesChanged", () => {
+      clearTimeout(mod.liveTimer);
+      mod.liveTimer = setTimeout(refreshQuietly, 150);
+    });
+    hub.connect().catch(() => { /* sin conexión en vivo queda el ciclo de 20 s */ });
+  }
+
+  function disconnectLive() {
+    clearTimeout(mod.liveTimer);
+    if (mod.live) mod.live.close();
+    mod.live = null;
+    mod.watchLive = null;
+  }
+
+  async function refreshQuietly() {
+    const login = D.channel;
+    if (!login || mod.state.status === "loading" || document.visibilityState !== "visible") return;
+    if (refreshing) { refreshAgain = true; return; }   // llegó un aviso mientras se pedía: se repite al terminar para no quedarse con lo viejo
+    refreshing = true;
+    const token = mod.loadToken;
+    try {
+      const r = await D.sw({ type: "getEmotes", login, providers: providerFlags(), fresh: true });
+      if (token !== mod.loadToken || D.channel !== login || !r || !r.ok) return;   // falló o cambió de canal: se queda con lo que hay
+      if (signature(r.entries) === signature(mod.entries)) return;
+      mod.entries = r.entries;
+      mod.dict = new Map(r.entries.map((e) => [e.n, e]));
+      mod.setState({ status: "ready", count: r.entries.length });
+      reprocessAll();
+    } finally {
+      refreshing = false;
+      if (refreshAgain) { refreshAgain = false; refreshQuietly(); }
+    }
   }
 
   /** Cambios de ajustes: el tamaño se aplica ya; los proveedores piden un diccionario nuevo (con un poco de espera por si mueven varios) */

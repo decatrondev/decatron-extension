@@ -125,7 +125,7 @@
     const J = (url) => getJson(fetchFn, url);
     const tasks = []; // de menos a más prioridad: lo último que se aplica gana
     // Los globales de Decatron van primero: solo aparecen si el nombre no lo tomó nadie más
-    if (providers.decatronGlobal) tasks.push(layer("gdec", 60 * 1000, async () => parseOwn(await J(`${API}/api/public/global-emotes`), "gdec")));
+    if (providers.decatronGlobal) tasks.push(layer("gdec", 60 * 1000, async () => parseOwn(await getJson(fetchFn, `${API}/api/public/global-emotes`, { cache: "no-store" }), "gdec")));
     if (providers.globals) {
       if (providers.ffz) tasks.push(layer("ffz:global", TTL_GLOBAL, async () => parseFfz(await J("https://api.frankerfacez.com/v1/set/global"), true)));
       if (providers.bttv) tasks.push(layer("bttv:global", TTL_GLOBAL, async () => parseBttv(await J("https://api.betterttv.net/3/cached/emotes/global"))));
@@ -144,7 +144,7 @@
         return parseSevenTv(j && j.emote_set);
       }));
     }
-    if (providers.own) tasks.push(layer(`own:${login}`, 30 * 1000, async () => parseOwn(await J(`${API}/api/public/emotes/${encodeURIComponent(login)}`))));
+    if (providers.own) tasks.push(layer(`own:${login}`, 30 * 1000, async () => parseOwn(await getJson(fetchFn, `${API}/api/public/emotes/${encodeURIComponent(login)}`, { cache: "no-store" }))));
 
     const layers = await Promise.all(tasks);
     const merged = new Map();
