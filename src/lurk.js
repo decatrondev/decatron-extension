@@ -5,6 +5,9 @@
 //   full   → abierta mientras el canal esté en vivo y en algún /multi (puntos pasivos, cofres con el módulo de puntos y racha)
 // Apagado por defecto (modules.lurk.enabled). Cada canal puede tener su propio ajuste (modules.lurk.channels[login]).
 // Si la persona cierra una de estas pestañas, no se vuelve a abrir en ese directo. Al cerrar el último /multi se cierran todas.
+// El navegador no arranca el video de una pestaña que nunca se mostró (y una ventana tapada cuenta como oculta), así que la ventana
+// de lurk se muestra chica en una esquina con la pestaña nueva al frente hasta que su video arranca; después se minimiza y el foco
+// vuelve a la ventana del /multi.
 // No hay temporizadores largos (el service worker se duerme): todo se recalcula en tick(), que llaman los avisos periódicos de
 // la página de /multi y de las propias pestañas de lurk, y los cambios de ajustes o de pestañas.
 const DctLurk = (() => {
@@ -12,6 +15,8 @@ const DctLurk = (() => {
   const MARK = "dct-lurk";
   const STREAK_MS = 30 * 60 * 1000;   // tope de la pestaña de racha si no se ve subir la racha (lo normal es cerrarse antes, al subir)
   const LOG_MAX = 80;
+  const WARM_MS = 30 * 1000;          // tiempo para que arranque el video de una pestaña mostrada; si no, se sigue con la próxima
+  const WARM_W = 480, WARM_H = 300;
   const STREAK_PARALLEL = 3;          // pestañas de racha abiertas a la vez; el resto espera turno
   const LIVE_TTL = 60 * 1000;
   const DONE_TTL = 3 * 24 * 3600 * 1000;
@@ -24,6 +29,14 @@ const DctLurk = (() => {
   async function log(login, code, p) {
     const { lurkLog } = await chrome.storage.local.get("lurkLog");
     const list = Array.isArray(lurkLog) ? lurkLog : [];
+    const last = list[list.length - 1];
+    // El mismo aviso del mismo canal en menos de 10 min no se repite: se cuenta
+    if (last && last.login === login && last.code === code && Date.now() - last.at < 10 * 60 * 1000) {
+      last.p = { ...(p || {}), n: (Number(last.p && last.p.n) || 1) + 1 };
+      last.at = Date.now();
+      await chrome.storage.local.set({ lurkLog: list });
+      return;
+    }
     list.push({ at: Date.now(), login, code, p: p || {} });
     await chrome.storage.local.set({ lurkLog: list.slice(-LOG_MAX) });
   }
@@ -77,6 +90,16 @@ const DctLurk = (() => {
 
   async function exists(tabId) { try { await chrome.tabs.get(tabId); return true; } catch { return false; } }
 
+  /** Dónde va la ventana chica: abajo a la derecha de la ventana del /multi */
+  async function corner(mvWindowId) {
+    try {
+      const w = await chrome.windows.get(mvWindowId);
+      const left = w.left + w.width - WARM_W - 16, top = w.top + w.height - WARM_H - 16;
+      if (!Number.isFinite(left) || !Number.isFinite(top)) return { width: WARM_W, height: WARM_H };
+      return { left: Math.max(0, Math.round(left)), top: Math.max(0, Math.round(top)), width: WARM_W, height: WARM_H };
+    } catch { return { width: WARM_W, height: WARM_H }; }
+  }
+
   async function openTab(login, st) {
     const real = `https://www.twitch.tv/${encodeURIComponent(login)}?${MARK}=1`;
     // En la prueba de punta a punta (dctLurkTest) la pestaña nace en blanco y luego carga la dirección: así el navegador de pruebas
@@ -89,10 +112,11 @@ const DctLurk = (() => {
       catch { st.lurkWindow = null; }
     }
     if (!tab) {
-      // Ventana aparte y minimizada: no llena la ventana de la persona de pestañas
-      let win = null;
-      try { win = await chrome.windows.create({ url, focused: false, state: "minimized" }); }
-      catch { win = await chrome.windows.create({ url, focused: false }); }
+      // Ventana aparte: no llena la ventana de la persona de pestañas. Nace chica y a la vista (warm() la minimiza al arrancar el video)
+      // Si la esquina queda fuera de la pantalla (otro monitor, ventana del /multi movida) el navegador rechaza la posición: sin ella
+      let win;
+      try { win = await chrome.windows.create({ url, focused: true, ...(await corner(st.returnWindow)) }); }
+      catch { win = await chrome.windows.create({ url, focused: true, width: WARM_W, height: WARM_H }); }
       st.lurkWindow = win.id;
       tab = win.tabs && win.tabs[0] ? win.tabs[0] : (await chrome.tabs.query({ windowId: win.id }))[0];
     }
@@ -110,9 +134,37 @@ const DctLurk = (() => {
     setTimeout(() => closingByUs.delete(tabId), 5000);
   }
 
+  /** Muestra la ventana de lurk con la próxima pestaña cuyo video no arrancó; cuando no queda ninguna, la minimiza y devuelve el foco. */
+  async function warm(st) {
+    if (st.lurkWindow == null) return;
+    let win;
+    try { win = await chrome.windows.get(st.lurkWindow); } catch { return; }
+    const now = Date.now();
+    const cur = st.warming != null ? st.lurkTabs[st.warming] : null;
+    if (cur && !cur.started && !cur.warmFailed && now - (st.warmingSince || now) > WARM_MS) {
+      cur.warmFailed = true;
+      await log(cur.login, "warm_failed", { seconds: Math.round(WARM_MS / 1000) });
+    }
+    const next = Object.keys(st.lurkTabs).map(Number).find((id) => !st.lurkTabs[id].started && !st.lurkTabs[id].warmFailed);
+    if (next == null) {
+      st.warming = null;
+      if (win.state !== "minimized") {
+        try { await chrome.windows.update(win.id, { state: "minimized" }); } catch { /* sin soporte */ }
+        if (st.returnWindow != null) { try { await chrome.windows.update(st.returnWindow, { focused: true }); } catch { /* ya no existe */ } }
+      }
+      return;
+    }
+    if (st.warming !== next) { st.warming = next; st.warmingSince = now; }
+    try { await chrome.tabs.update(next, { active: true }); } catch { /* ya no existe */ }
+    if (win.state === "minimized") {
+      try { await chrome.windows.update(win.id, { state: "normal", focused: true, ...(await corner(st.returnWindow)) }); }
+      catch { try { await chrome.windows.update(win.id, { state: "normal", focused: true }); } catch { /* sin soporte */ } }
+    }
+  }
+
   async function run() {
     const cfg = await settings();
-    const st = { lurkTabs: {}, lurkWindow: null, mvChannels: {}, ...(await store.get(["lurkTabs", "lurkWindow", "mvChannels"])) };
+    const st = { lurkTabs: {}, lurkWindow: null, mvChannels: {}, warming: null, warmingSince: 0, ...(await store.get(["lurkTabs", "lurkWindow", "mvChannels", "warming", "warmingSince"])) };
     const { lurkDone: doneRaw } = await chrome.storage.local.get("lurkDone");
     const done = {};
     const now = Date.now();
@@ -121,8 +173,17 @@ const DctLurk = (() => {
     // Los /multi que siguen abiertos y sus canales
     const mvTabs = await chrome.tabs.query({ url: MV_URLS });
     const mvIds = new Set(mvTabs.map((t) => String(t.id)));
+    st.returnWindow = mvTabs[0] ? mvTabs[0].windowId : null;
     for (const id of Object.keys(st.mvChannels)) if (!mvIds.has(id)) delete st.mvChannels[id];
-    for (const id of Object.keys(st.lurkTabs)) if (!(await exists(Number(id)))) delete st.lurkTabs[id];
+    // Una pestaña de lurk que ya no existe y que no cerró la extensión la cerró la persona: no se reabre en ese directo
+    for (const id of Object.keys(st.lurkTabs)) {
+      if (await exists(Number(id))) continue;
+      const t = st.lurkTabs[id];
+      delete st.lurkTabs[id];
+      if (closingByUs.has(Number(id)) || !t) continue;
+      done[t.login] = { streamId: t.streamId, at: now, how: "closed" };
+      await log(t.login, "closed_user", { minutes: Math.round((now - t.openedAt) / 60000) });
+    }
 
     const wanted = [...new Set(Object.values(st.mvChannels).flat())].filter((l) => LOGIN.test(l));
     const effective = (l) => {
@@ -172,21 +233,22 @@ const DctLurk = (() => {
     let streakOpen = Object.values(st.lurkTabs).filter((t) => t.mode === "streak").length;
     for (const o of toOpen) {
       if (o.mode === "streak" && streakOpen >= STREAK_PARALLEL) continue;
-      const id = await openTab(o.login, st).catch(() => null);
+      const id = await openTab(o.login, st).catch(async (e) => { await log(o.login, "open_failed", { reason: String((e && e.message) || e).slice(0, 120) }); return null; });
       if (id == null) continue;
       st.lurkTabs[id] = { login: o.login, mode: o.mode, streamId: o.streamId, openedAt: Date.now() };
       await log(o.login, "opened", { mode: o.mode });
       status[o.login] = "open";
       if (o.mode === "streak") streakOpen++;
     }
-    if (!Object.keys(st.lurkTabs).length) st.lurkWindow = null;
+    if (!Object.keys(st.lurkTabs).length) { st.lurkWindow = null; st.warming = null; }
+    else await warm(st);
 
-    await store.set({ lurkTabs: st.lurkTabs, lurkWindow: st.lurkWindow, mvChannels: st.mvChannels });
+    await store.set({ lurkTabs: st.lurkTabs, lurkWindow: st.lurkWindow, mvChannels: st.mvChannels, warming: st.warming, warmingSince: st.warmingSince });
     await chrome.storage.local.set({ lurkDone: done });
 
     // Cada /multi ve el estado de sus canales
     const openedAt = {}, streak = {}, health = {};
-    for (const t of Object.values(st.lurkTabs)) { openedAt[t.login] = t.openedAt; streak[t.login] = t.streak ? t.streak.last : null; health[t.login] = t.noSession ? "nosession" : t.health || null; }
+    for (const t of Object.values(st.lurkTabs)) { openedAt[t.login] = t.openedAt; streak[t.login] = t.streak ? t.streak.last : null; health[t.login] = t.noSession ? "nosession" : t.health || (t.warmFailed ? "stalled" : "starting"); }
     const { lurkLog } = await chrome.storage.local.get("lurkLog");
     const recent = (Array.isArray(lurkLog) ? lurkLog : []).slice(-40);
     for (const t of mvTabs) {
@@ -234,10 +296,21 @@ const DctLurk = (() => {
     if (!t) return;
     const d = data || {};
     if (event === "nosession") { t.noSession = true; await log(t.login, "nosession"); }
-    else if (event === "playing") { t.health = "playing"; await log(t.login, "playing", { muted: !!d.muted, height: Number(d.height) || 0 }); }
-    else if (event === "resumed") { t.health = "playing"; await log(t.login, "resumed", { muted: !!d.muted }); }
+    else if (event === "playing") {
+      if (!t.started) await log(t.login, "playing", { height: Number(d.height) || 0, seconds: Math.round((Date.now() - t.openedAt) / 1000) });
+      else if (t.health === "paused") await log(t.login, "playing_again");
+      t.started = true; t.health = "playing";
+    }
+    else if (event === "resumed") { t.health = "playing"; await log(t.login, "resumed"); }
     else if (event === "paused") { t.health = "paused"; await log(t.login, "paused"); }
-    else if (event === "streakUnreadable") { await log(t.login, "streak_unreadable", { reason: String(d.reason || ""), raw: String(d.raw || "").slice(0, 180) }); }
+    else if (event === "streakUnreadable") {
+      await log(t.login, "streak_unreadable", { reason: String(d.reason || ""), raw: String(d.raw || "").slice(0, 180), menu: String(d.menu || "").slice(0, 400), hidden: !!d.hidden });
+    }
+    else if (event === "streakShare") {
+      await log(t.login, "streak_share", { raw: String(d.raw || "").slice(0, 180) });
+      const { lurkDone } = await chrome.storage.local.get("lurkDone");
+      await chrome.storage.local.set({ lurkDone: { ...(lurkDone || {}), [t.login]: { streamId: t.streamId, at: Date.now(), how: "earned" } } });
+    }
     else if (event === "streak" && Number.isFinite(d.have) && Number.isFinite(d.need)) {
       const now = { have: d.have, need: d.need };
       if (!t.streak) { t.streak = { first: now, last: now }; await log(t.login, "streak_read", { have: d.have, need: d.need, raw: String(d.raw || "").slice(0, 180) }); }

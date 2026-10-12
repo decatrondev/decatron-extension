@@ -34,6 +34,10 @@ const MULTI = `<!doctype html><title>multi</title><script>
 // window.__streak cambia lo que muestra. Con noSession aparece el botón de iniciar sesión.
 const TWITCH = `<!doctype html><title>twitch</title><body>
 <script>window.__streak = '0/2';</script>
+<video id="v" muted autoplay playsinline width="320" height="180"></video>
+<script>const c = document.createElement('canvas'); c.width = 320; c.height = 180; const g = c.getContext('2d'); let n = 0;
+setInterval(() => { g.fillStyle = n++ % 2 ? '#333' : '#666'; g.fillRect(0, 0, 320, 180); }, 100);
+const v = document.getElementById('v'); v.srcObject = c.captureStream(10); v.play().catch(() => {});</script>
 <div data-test-selector="community-points-summary"><button id="pts" onclick="
   const m = document.getElementById('menu');
   if (m) { m.remove(); return; }
@@ -94,6 +98,12 @@ check(true, 'estado en la página: canaluno «open», canaldos «offline»');
 await waitFor(() => ctx.pages().some((p) => p.url().includes('dct-lurk')));
 const lurkPage = ctx.pages().find((p) => p.url().includes('dct-lurk'));
 if (lurkPage) await lurkPage.waitForLoadState();
+// El video arranca con la ventana a la vista y luego la ventana se minimiza sola
+check(await waitFor(async () => (await logCodes()).includes('canaluno:playing'), 15000), 'el video de la pestaña arrancó (queda en el historial)');
+const winState = async () => sw.evaluate(async () => { const { lurkWindow } = await chrome.storage.session.get('lurkWindow'); try { return (await chrome.windows.get(lurkWindow)).state; } catch { return 'none'; } });
+check(await waitFor(async () => (await winState()) === 'minimized', 30000), `con el video andando la ventana de lurk se minimiza (${await winState()})`);
+await page.waitForFunction(() => window.last().channels.canaluno.health === 'playing', null, { timeout: 10000 });
+check(true, 'la página ve «video reproduciendo»');
 const inTab = lurkPage ? await lurkPage.evaluate(() => ({ mark: sessionStorage.getItem('dct-lurk'), q: localStorage.getItem('video-quality') })) : {};
 check(inTab.mark === '1' && /160p30/.test(inTab.q || ''), `en la pestaña: marca en sessionStorage y calidad mínima (${inTab.q})`);
 
