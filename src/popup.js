@@ -1,12 +1,13 @@
 // Popup de la barra del navegador: un resumen del canal, un interruptor por módulo y el atajo al panel dentro de Twitch.
 const { t } = window.__dctI18n;
 const $ = (id) => document.getElementById(id);
-// Cada módulo con su valor de fábrica: el de puntos nace apagado y el resto encendido (igual que `defaults.enabled` de cada módulo).
+// Cada módulo con su valor de fábrica: puntos y lurk nacen apagados y el resto encendido (igual que `defaults.enabled` de cada módulo).
 const MODULES = [
   { id: "translation", name: () => t("tr.name"), defaultEnabled: true },
   { id: "emotes", name: () => t("em.name"), defaultEnabled: true },
   { id: "multiview", name: () => t("mv.name"), defaultEnabled: true },
   { id: "points", name: () => t("pt.name"), defaultEnabled: false },
+  { id: "lurk", name: () => t("lk.name"), defaultEnabled: false },
 ];
 
 $("mods-title").textContent = t("pop.modules");

@@ -11,6 +11,7 @@ own, all inside a single panel. It works on Chrome, Edge, Brave and Opera; there
 | **Translation** | ✅ | Listen to the stream in your language with the dubbing of [Decatron live translation](https://decatron.net/docs/translation). Only you hear it. |
 | **Emotes** | ✅ | Draws **7TV, BetterTTV, FrankerFaceZ** and **Decatron's own** emotes (the ones each channel's community uploads) in chat, without installing other extensions. Includes the `:` picker. |
 | **Multi-view** | ✅ | Adds the channel you are watching to your [Multi-view](https://decatron.net/docs/multiview) (several Twitch and Kick channels on one screen). If you already have one open, the channel is added there without reloading it, so the videos do not cut. |
+| **Lurk mode (Multi-view)** | ✅ | The embedded player in the [Multi-view](https://decatron.net/docs/multiview) does not earn channel points or watch streaks; a regular twitch.tv tab does, even muted and in the background. For each Twitch channel in an open `decatron.net/multi`, opens a regular Twitch tab — muted, lowest quality, in a separate minimized window — that counts. **Off by default.** *Streak only*: once per stream, about 10 minutes, up to 3 at a time. *Full*: open while the channel is live and in the Multi-view (points and, with the channel points module on, chests). Chosen from the Multi-view's top bar, with a per-channel setting on each tile. A tab you close yourself does not reopen during that stream; closing the Multi-view closes them all. Only the channel points module runs in those tabs. |
 | **Channel points** | ✅ | Claims the channel points **bonus** (the chest) by itself a few seconds after it appears, with a random 1–5 s delay and a "+50 points" notice. **Off by default**, per-channel switch, only the bonus: it does not redeem rewards or bet points. It also works in the official Twitch chat embedded in the Multi-view (`decatron.net/multi`), with the same switch and the same excluded channels, as long as you are signed in to Twitch inside that chat. Notices when FrankerFaceZ or BetterTTV are detected (they can claim too; the bonus is claimed once). |
 
 ## How to use it
@@ -54,7 +55,10 @@ src/
   shell.js + panel.css player button and panel (Shadow DOM)
   modules/             translation.js · emotes.js · multiview.js · points.js
   points-embed.js      channel points inside the embedded official chat (Multi-view)
-  multiview-page.js    runs on decatron.net/multi: passes "add this channel" from the extension to the page
+  multiview-page.js    runs on decatron.net/multi: passes "add this channel" from the extension to the page, marks the page
+                       (extension version, lurk mode) and relays the lurk channels, settings and status
+  lurk.js              service worker side of lurk mode: opens, mutes and closes the regular Twitch tabs
+  lurk-tab.js          runs first on twitch.tv: in a lurk tab (?dct-lurk=1) asks for the lowest quality and only the points module runs
   login-page.js        runs ONLY on decatron.net/extension/login: receives the viewer token from the page and stores it
   emote-picker.js      the ":" picker
   captions-ui.js       captions and audio notice over the video (translation)
@@ -72,7 +76,7 @@ and settings saving come for free.
 
 Only `storage`, and access to: `twitch.tv` (the page), `decatron.net` (translation, own emotes, the Multi-view page — it only receives "add this channel" — and the `/extension/login` page, which hands over the viewer token: it only identifies you to live translation and gives no dashboard access),
 `7tv.io`, `api.betterttv.net` and `api.frankerfacez.com` (their emotes) and `gql.twitch.tv` (the channel
-id, which 7TV and BTTV ask for by id). No account or login.
+id, which 7TV and BTTV ask for by id, and whether a channel in lurk mode is live). Lurk mode opens, mutes and closes only the tabs it creates itself. No account or login.
 
 ## Install in developer mode
 
@@ -101,6 +105,7 @@ npm run test:picker    # ":" picker against a real Slate editor
 npm run test:ffz -- <live-channel>      # next to FrankerFaceZ (loads its script on the real Twitch)
 npm run test:login     # sign-in: the login page hands over the viewer token, it is stored, sent to the hub, expired/unrecognized tokens, another decatron.net page cannot store one, sign out (local simulated hub)
 npm run test:denied    # translation: the extension explains when the channel refuses the join (listener cap, pause, language not offered, followers/subscribers/sign-in levels with the days or tier asked) — local simulated hub
+npm run test:lurk      # lurk mode: page mark, off by default, streak only (muted tab with the mark and lowest quality, separate window, closes at 10 min), once per stream, full, a tab closed by hand is respected, per-channel setting, everything closes with the Multi-view (no network or account needed)
 npm run test:points-embed  # same bonus claim inside the embedded official chat iframe (Multi-view): off by default, delay, destructive button, excluded channel
 npm run test:points    # channel points module against a replica of the bonus chest: off by default, delay, notice, destructive button, blocked channel, FFZ detection (no network or account needed)
 npm run test:multiview # Multi-view module: opens one, adds a second channel without reloading it and checks the duplicate notice (real decatron.net)
