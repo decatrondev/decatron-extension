@@ -36,6 +36,7 @@
     const d = parse(e);
     if (d) send({ type: "lurkSet", patch: d });
   });
+  window.addEventListener("decatron-lurk-clear-log", () => send({ type: "lurkClearLog" }));
   setInterval(() => { if (channels) send({ type: "lurkSync", channels }); }, 20000);
 
   chrome.runtime.onMessage.addListener((msg) => {

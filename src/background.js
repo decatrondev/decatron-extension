@@ -49,6 +49,8 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (msg.type === "lurkSync" && sender.tab) { DctLurk.sync(sender.tab.id, msg.channels).then(() => reply({ ok: true })).catch(() => reply({ ok: false })); return true; }
   if (msg.type === "lurkSet") { DctLurk.setSettings(msg.patch || {}).then(() => reply({ ok: true })).catch(() => reply({ ok: false })); return true; }
   if (msg.type === "lurkPing") { DctLurk.tick(); return; }
+  if (msg.type === "lurkTab" && sender.tab) { DctLurk.fromTab(sender.tab.id, msg.event, msg.data); return; }
+  if (msg.type === "lurkClearLog") { DctLurk.clearLog(); return; }
   if (msg.type === "multiviewOpen") { multiviewOpen().then(reply).catch(() => reply({ ok: false })); return true; }
   if (msg.type === "channel" && sender.tab) {
     stateByTab.set(sender.tab.id, msg);

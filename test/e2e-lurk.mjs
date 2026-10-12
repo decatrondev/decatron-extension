@@ -1,8 +1,9 @@
 // Modo lurk: prueba de punta a punta en un Chromium real con la extensión cargada. Sin red ni cuenta de Twitch: decatron.net/multi
 // es una réplica mínima que habla con la extensión por eventos del DOM, twitch.tv es una página vacía y la consulta de «en vivo»
 // a gql.twitch.tv se contesta aquí (canaluno en vivo, canaldos no). Comprueba: la marca de la extensión en la página, apagado por
-// defecto, solo racha (abre la pestaña silenciada con la marca y la calidad mínima, en ventana aparte, y la cierra a los 10 min),
-// una vez por directo, completo, cierre a mano respetado, ajuste por canal y cierre de todo al cerrar el /multi.
+// defecto, solo racha (abre la pestaña silenciada con la marca y la calidad mínima, en ventana aparte; lee la racha del menú de
+// puntos y la cierra cuando sube, o a los 30 min), aviso de pestaña sin sesión de Twitch, historial, una vez por directo, completo,
+// cierre a mano respetado, ajuste por canal y cierre de todo al cerrar el /multi.
 import { chromium } from 'playwright-core';
 import os from 'node:os';
 import path from 'node:path';
@@ -29,16 +30,32 @@ const MULTI = `<!doctype html><title>multi</title><script>
   window.set = (patch) => dispatchEvent(new CustomEvent('decatron-lurk-set', { detail: JSON.stringify(patch) }));
   window.last = () => window.lurkStates[window.lurkStates.length - 1] || null;
 </script>`;
-const TWITCH = `<!doctype html><title>twitch</title><body>canal</body>`;
+// Réplica mínima de twitch.tv: el botón del saldo de puntos abre un menú con la tarjeta de la racha (texto real de Twitch).
+// window.__streak cambia lo que muestra. Con noSession aparece el botón de iniciar sesión.
+const TWITCH = `<!doctype html><title>twitch</title><body>
+<script>window.__streak = '0/2';</script>
+<div data-test-selector="community-points-summary"><button id="pts" onclick="
+  const m = document.getElementById('menu');
+  if (m) { m.remove(); return; }
+  const d = document.createElement('div'); d.id = 'menu';
+  d.innerHTML = '<div><p>0</p><p>Racha de visualizaciones</p><p>En curso</p><p>Racha de 2 streams</p><p>' + window.__streak + '</p><p>Conéctate a 2 de los streams consecutivos</p></div>';
+  document.body.append(d);">1.2K</button></div>
+<!--SESSION-->
+<script>document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const m = document.getElementById('menu'); if (m) m.remove(); } });</script>
+</body>`;
 let streamId = '111';
 await ctx.route('https://decatron.net/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: MULTI }));
-await ctx.route('https://www.twitch.tv/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: TWITCH }));
+let noSession = false;
+await ctx.route('https://www.twitch.tv/**', (r) => r.fulfill({ status: 200, contentType: 'text/html',
+  body: TWITCH.replace('<!--SESSION-->', noSession ? '<button data-a-target="login-button">Iniciar sesión</button>' : '') }));
 await ctx.route('https://gql.twitch.tv/**', (r) => r.fulfill({
   status: 200, contentType: 'application/json',
   body: JSON.stringify({ data: { users: [{ login: 'canaluno', stream: streamId ? { id: streamId } : null }, { login: 'canaldos', stream: null }] } }),
 }));
 
 const sw = ctx.serviceWorkers()[0] || await ctx.waitForEvent('serviceworker');
+await sw.evaluate(() => chrome.storage.local.set({ dctLurkTest: true }));
+const logCodes = () => sw.evaluate(async () => ((await chrome.storage.local.get('lurkLog')).lurkLog || []).map((e) => e.login + ':' + e.code));
 let failed = 0;
 const check = (ok, msg) => { console.log(ok ? '✓' : '✗', msg); if (!ok) failed++; };
 const lurkTabs = () => sw.evaluate(async () => {
@@ -80,17 +97,35 @@ if (lurkPage) await lurkPage.waitForLoadState();
 const inTab = lurkPage ? await lurkPage.evaluate(() => ({ mark: sessionStorage.getItem('dct-lurk'), q: localStorage.getItem('video-quality') })) : {};
 check(inTab.mark === '1' && /160p30/.test(inTab.q || ''), `en la pestaña: marca en sessionStorage y calidad mínima (${inTab.q})`);
 
-// 3) A los 10 minutos se cierra sola y queda «done» para este directo (no se reabre)
+// 3) La pestaña lee la racha (0/2) del menú de puntos; cuando sube a 1/2 se cierra sola y queda «done» en este directo
+const okRead = await waitFor(async () => (await logCodes()).includes('canaluno:streak_read'), 15000);
+check(okRead, 'la racha se lee del menú de puntos (0/2)');
+if (!okRead) { console.log('historial:', await logCodes()); console.log('menú:', await lurkPage.evaluate(() => document.body.innerHTML.slice(0, 600))); }
+await page.waitForFunction(() => window.last().channels.canaluno.streak && window.last().channels.canaluno.streak.have === 0, null, { timeout: 10000 });
+check(true, 'la página ve la racha leída 0/2');
+await lurkPage.evaluate(() => { window.__streak = '1/2'; });
+check(await waitFor(async () => (await lurkTabs()).length === 0, 20000), 'la racha subió a 1/2: la pestaña se cierra sola');
+const codes3 = await logCodes();
+check(codes3.includes('canaluno:streak_up') && codes3.includes('canaluno:closed_earned'), `historial: ${codes3.join(', ')}`);
+await page.waitForFunction(() => window.last().channels.canaluno.status === 'done' && (window.last().log || []).length > 0, null, { timeout: 10000 });
+check(true, 'estado «done» y el historial llega a la página');
+await tick();
+check((await lurkTabs()).length === 0, 'racha cubierta: no se vuelve a abrir en el mismo directo');
+
+// 3b) Si no ve subir la racha, la cierra a los 30 minutos (cierre por tiempo en el historial)
+streamId = '150';
+await clearLive(); await tick();
+check(await waitFor(async () => (await lurkTabs()).length === 1), 'directo nuevo: se abre para la racha');
 await sw.evaluate(async () => {
   const { lurkTabs } = await chrome.storage.session.get('lurkTabs');
-  for (const t of Object.values(lurkTabs)) t.openedAt -= 11 * 60 * 1000;
+  for (const t of Object.values(lurkTabs)) t.openedAt -= 31 * 60 * 1000;
   await chrome.storage.session.set({ lurkTabs });
 });
 await tick();
-check(await waitFor(async () => (await lurkTabs()).length === 0), 'pasados 10 minutos la pestaña de racha se cierra');
-await page.waitForFunction(() => window.last().channels.canaluno.status === 'done', null, { timeout: 10000 });
-await tick();
-check((await lurkTabs()).length === 0, 'racha cubierta: no se vuelve a abrir en el mismo directo');
+check(await waitFor(async () => (await lurkTabs()).length === 0), 'sin ver subir la racha se cierra a los 30 minutos');
+check((await logCodes()).includes('canaluno:closed_timeout'), 'el historial dice que se cerró por tiempo');
+await page.waitForFunction(() => window.last().channels.canaluno.status === 'timeout', null, { timeout: 10000 });
+check(true, 'estado «timeout» en la página');
 
 // 4) Un directo nuevo del mismo canal vuelve a abrir la pestaña de racha
 streamId = '222';
@@ -106,7 +141,9 @@ check((await lurkTabs()).length === 0, 'cerrada a mano: no se reabre');
 await page.waitForFunction(() => window.last().channels.canaluno.status === 'closed', null, { timeout: 10000 });
 check(true, 'estado «closed» en la página');
 
-// 6) Completo con un directo nuevo: la pestaña queda abierta aunque pasen los 10 minutos
+// 6) Completo con un directo nuevo: la pestaña queda abierta aunque pase una hora. Esta vez la pestaña no tiene sesión de
+// Twitch: el historial lo avisa
+noSession = true;
 streamId = '333';
 await clearLive();
 await page.evaluate(() => window.set({ enabled: true, mode: 'full' }));
@@ -118,6 +155,10 @@ await sw.evaluate(async () => {
 });
 await tick();
 check((await lurkTabs()).length === 1, 'completo: sigue abierta pasada una hora');
+check(await waitFor(async () => (await logCodes()).includes('canaluno:nosession'), 15000), 'pestaña sin sesión de Twitch: queda en el historial');
+await page.waitForFunction(() => window.last().channels.canaluno.health === 'nosession', null, { timeout: 10000 });
+check(true, 'la página ve «sin sesión de Twitch»');
+noSession = false;
 
 // 7) Ajuste por canal: apagado en canaluno cierra su pestaña
 await page.evaluate(() => window.set({ login: 'canaluno', channelMode: 'off' }));
