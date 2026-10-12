@@ -88,6 +88,7 @@ npm run test:dict      # diccionario de emotes contra 7TV, BTTV, FFZ y Twitch re
 npm run test:twitch -- <canal-en-vivo>   # botón, panel, carga de emotes y reemplazo contra el Twitch REAL (chat público)
 npm run test:picker    # selector con ":" contra un editor Slate de verdad
 npm run test:ffz -- <canal-en-vivo>      # junto a FrankerFaceZ (carga su script en el Twitch real)
+npm run test:denied    # traducción: la extensión explica cuando el canal rechaza la entrada (tope de oyentes, pausa, idioma que no se ofrece), con un hub simulado local
 npm run test:points    # módulo de puntos de canal contra una réplica del cofre del bonus: apagado por defecto, retardo, aviso, botón destructivo, canal bloqueado y detección de FFZ (no necesita red ni cuenta de Twitch)
 npm run test:multiview # módulo Multi-view: abre uno, suma un segundo canal sin recargarlo y comprueba el aviso de duplicado (decatron.net real)
 npm run test:video && npm run test:e2e   # traducción contra una réplica del player (con DURATION=3 solo mira la interfaz)

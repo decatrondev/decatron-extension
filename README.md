@@ -97,6 +97,7 @@ npm run test:dict      # emote dictionary against real 7TV, BTTV, FFZ and Twitch
 npm run test:twitch -- <live-channel>   # button, panel, emote loading and replacement against the REAL Twitch (public chat)
 npm run test:picker    # ":" picker against a real Slate editor
 npm run test:ffz -- <live-channel>      # next to FrankerFaceZ (loads its script on the real Twitch)
+npm run test:denied    # translation: the extension explains when the channel refuses the join (listener cap, pause, language not offered) — local simulated hub
 npm run test:points    # channel points module against a replica of the bonus chest: off by default, delay, notice, destructive button, blocked channel, FFZ detection (no network or account needed)
 npm run test:multiview # Multi-view module: opens one, adds a second channel without reloading it and checks the duplicate notice (real decatron.net)
 npm run test:video && npm run test:e2e   # translation against a replica of the player (with DURATION=3 it only checks the interface)

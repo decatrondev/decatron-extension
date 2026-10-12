@@ -29,6 +29,9 @@
     return { video, root };
   }
 
+  // Motivos con los que el servidor puede rechazar la entrada (límites de acceso del canal)
+  const DENIED = ["paused", "full", "ip_limit", "languages_full", "language", "rate_limited", "busy"];
+
   const mod = {
     id: "translation",
     order: 1,
@@ -83,7 +86,8 @@
         }
         // Qué decirle al espectador: lo más urgente primero (error, canal apagado, conectando, nadie habla)
         let sub = t("tr.onlyYou"), tone = s.live ? "ok" : "", retry = false;
-        if (s.selected && s.connection === "error") { sub = t("tr.error"); tone = "warn"; retry = true; }
+        if (s.selected && s.connection === "denied") { sub = t("tr.denied." + (DENIED.includes(s.denied) ? s.denied : "paused")); tone = "warn"; retry = ["full", "ip_limit", "rate_limited", "busy", "languages_full"].includes(s.denied); }
+        else if (s.selected && s.connection === "error") { sub = t("tr.error"); tone = "warn"; retry = true; }
         else if (!s.live) sub = t("tr.notLive");
         else if (s.connection === "connecting") sub = t("tr.connecting");
         else if (s.connection === "reconnecting") { sub = t("tr.reconnecting"); tone = "warn"; }
@@ -254,10 +258,23 @@
     hub.on("SegmentChunk", (m) => { if (mod.current === cur) cur.player.chunk(m.seq, m.data); });
     hub.on("SegmentEnd", (m) => { if (mod.current === cur) cur.player.end(m.seq, !!m.error); });
     hub.on("SegmentDropped", (m) => { if (mod.current === cur && m.lang === mod.state.selected) cur.player.dropped(m.seq, m.reason); });
+    // El servidor te saca (por ejemplo el streamer usó el botón de pánico): se corta y se explica el motivo.
+    hub.on("Denied", (m) => {
+      if (mod.current !== cur) return;
+      cur.player.stop();
+      if (cur.hub) { cur.hub.close(); cur.hub = null; }
+      mod.setState({ connection: "denied", denied: (m && m.reason) || "paused", live: false });
+    });
     try {
       await hub.connect();
       const st = await hub.invoke("Join", cur.login, lang);
       if (mod.current !== cur) return;
+      // Entrada rechazada por los límites del canal (pausa, tope de oyentes, demasiadas conexiones…)
+      if (st && st.ok === false) {
+        hub.close(); cur.hub = null;
+        mod.setState({ connection: "denied", denied: st.reason || "paused", live: false });
+        return;
+      }
       mod.joinedAt = Date.now();
       mod.setState({ live: !!(st && st.active), listeners: (st && st.listeners) || {}, connection: "connected" });
       // Al reconectar el WS hay que volver a unirse al grupo.

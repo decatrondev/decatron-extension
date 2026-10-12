@@ -1,6 +1,6 @@
 {
   "name": "decatron-extension",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
   "description": "Extensión de navegador de Decatron para Twitch: traducción, emotes y más, por módulos",
   "type": "module",
@@ -16,7 +16,8 @@
     "pack:firefox": "node scripts/build.mjs firefox",
     "test:ffz": "node test/e2e-ffz.mjs",
     "test:multiview": "node test/e2e-multiview.mjs",
-    "test:points": "node test/e2e-points.mjs"
+    "test:points": "node test/e2e-points.mjs",
+    "test:denied": "node test/e2e-denied.mjs"
   },
   "devDependencies": {
     "playwright-core": "^1.63.0"
