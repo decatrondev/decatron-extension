@@ -47,6 +47,7 @@ src/
   shell.js + panel.css botón del player y panel (Shadow DOM)
   modules/             translation.js · emotes.js · multiview.js · points.js
   multiview-page.js    corre en decatron.net/multi: pasa «agrega este canal» de la extensión a la página
+  login-page.js        corre SOLO en decatron.net/extension/login: recibe el token de espectador de la página y lo guarda
   emote-picker.js      selector con ":"
   captions-ui.js       subtítulos y aviso de audio sobre el video (traducción)
   audio.js, dsp.js, signalr-lite.js
@@ -60,7 +61,7 @@ popup, el interruptor y el guardado de ajustes salen solos.
 
 ## Permisos
 
-Solo `storage`, y acceso a: `twitch.tv` (la página), `decatron.net` (traducción, emotes propios y la página del Multi-view: solo recibe «agrega este canal»), `7tv.io`, `api.betterttv.net`
+Solo `storage`, y acceso a: `twitch.tv` (la página), `decatron.net` (traducción, emotes propios, la página del Multi-view —solo recibe «agrega este canal»— y la página `/extension/login`, que entrega el token de espectador: solo te identifica ante la traducción en vivo y no da acceso al panel), `7tv.io`, `api.betterttv.net`
 y `api.frankerfacez.com` (sus emotes) y `gql.twitch.tv` (el id del canal, que 7TV y BTTV piden por id). Sin cuenta ni login.
 
 ## Instalar en modo desarrollador
@@ -88,6 +89,7 @@ npm run test:dict      # diccionario de emotes contra 7TV, BTTV, FFZ y Twitch re
 npm run test:twitch -- <canal-en-vivo>   # botón, panel, carga de emotes y reemplazo contra el Twitch REAL (chat público)
 npm run test:picker    # selector con ":" contra un editor Slate de verdad
 npm run test:ffz -- <canal-en-vivo>      # junto a FrankerFaceZ (carga su script en el Twitch real)
+npm run test:login     # inicio de sesión: la página de login entrega el token de espectador, se guarda, viaja al hub, tokens vencidos o no reconocidos, otra página de decatron.net no puede guardar uno y cerrar sesión (hub simulado local)
 npm run test:denied    # traducción: la extensión explica cuando el canal rechaza la entrada (tope de oyentes, pausa, idioma que no se ofrece), con un hub simulado local
 npm run test:points    # módulo de puntos de canal contra una réplica del cofre del bonus: apagado por defecto, retardo, aviso, botón destructivo, canal bloqueado y detección de FFZ (no necesita red ni cuenta de Twitch)
 npm run test:multiview # módulo Multi-view: abre uno, suma un segundo canal sin recargarlo y comprueba el aviso de duplicado (decatron.net real)

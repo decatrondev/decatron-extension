@@ -89,6 +89,25 @@
       return document.importNode(doc.documentElement, true);
     },
 
+    // ───────────── sesión del espectador (token de la traducción en vivo, en chrome.storage.local: no se sincroniza)
+    viewer: null,       // { token, login, expiresAt } o null
+    loadViewer() {
+      return new Promise((resolve) => {
+        try { chrome.storage.local.get("dctViewer", (v) => { D.viewer = (v && v.dctViewer) || null; resolve(D.viewer); }); }
+        catch { resolve(null); }
+      });
+    },
+    /** El token vigente, o null (sin sesión o vencido: no se manda un token que el servidor va a ignorar) */
+    viewerToken() {
+      const v = D.viewer;
+      return v && v.token && v.expiresAt * 1000 > Date.now() + 60000 ? v.token : null;
+    },
+    clearViewer() {
+      D.viewer = null;
+      try { chrome.storage.local.remove("dctViewer"); } catch { /* sin storage */ }
+      D.emit("viewer", null);
+    },
+
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
   };
 
@@ -102,6 +121,14 @@
       Object.assign(D.prefs, patch);
       D.emit("prefs", patch);
       if (patch.modules) D.emit("module-settings", { id: null, patch: {} });
+    });
+  } catch { /* sin storage */ }
+  // La sesión del espectador cambia desde la página de login (otra pestaña): llega sola
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== "local" || !changes.dctViewer) return;
+      D.viewer = changes.dctViewer.newValue || null;
+      D.emit("viewer", D.viewer);
     });
   } catch { /* sin storage */ }
 

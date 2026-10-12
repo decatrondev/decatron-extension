@@ -54,6 +54,7 @@ src/
   shell.js + panel.css player button and panel (Shadow DOM)
   modules/             translation.js · emotes.js · multiview.js · points.js
   multiview-page.js    runs on decatron.net/multi: passes "add this channel" from the extension to the page
+  login-page.js        runs ONLY on decatron.net/extension/login: receives the viewer token from the page and stores it
   emote-picker.js      the ":" picker
   captions-ui.js       captions and audio notice over the video (translation)
   audio.js, dsp.js, signalr-lite.js
@@ -68,7 +69,7 @@ and settings saving come for free.
 
 ## Permissions
 
-Only `storage`, and access to: `twitch.tv` (the page), `decatron.net` (translation, own emotes and the Multi-view page: it only receives "add this channel"),
+Only `storage`, and access to: `twitch.tv` (the page), `decatron.net` (translation, own emotes, the Multi-view page — it only receives "add this channel" — and the `/extension/login` page, which hands over the viewer token: it only identifies you to live translation and gives no dashboard access),
 `7tv.io`, `api.betterttv.net` and `api.frankerfacez.com` (their emotes) and `gql.twitch.tv` (the channel
 id, which 7TV and BTTV ask for by id). No account or login.
 
@@ -97,6 +98,7 @@ npm run test:dict      # emote dictionary against real 7TV, BTTV, FFZ and Twitch
 npm run test:twitch -- <live-channel>   # button, panel, emote loading and replacement against the REAL Twitch (public chat)
 npm run test:picker    # ":" picker against a real Slate editor
 npm run test:ffz -- <live-channel>      # next to FrankerFaceZ (loads its script on the real Twitch)
+npm run test:login     # sign-in: the login page hands over the viewer token, it is stored, sent to the hub, expired/unrecognized tokens, another decatron.net page cannot store one, sign out (local simulated hub)
 npm run test:denied    # translation: the extension explains when the channel refuses the join (listener cap, pause, language not offered) — local simulated hub
 npm run test:points    # channel points module against a replica of the bonus chest: off by default, delay, notice, destructive button, blocked channel, FFZ detection (no network or account needed)
 npm run test:multiview # Multi-view module: opens one, adds a second channel without reloading it and checks the duplicate notice (real decatron.net)

@@ -30,7 +30,7 @@
   }
 
   // Motivos con los que el servidor puede rechazar la entrada (límites de acceso del canal)
-  const DENIED = ["paused", "full", "ip_limit", "languages_full", "language", "rate_limited", "busy"];
+  const DENIED = ["paused", "full", "ip_limit", "user_limit", "languages_full", "language", "rate_limited", "busy"];
 
   const mod = {
     id: "translation",
@@ -74,7 +74,27 @@
       const stateBox = h("div", { class: "sec" });
       const prefsBox = h("div", { class: "sec" });
       const histBox = h("div", { class: "sec" });
-      body.append(listBox, stateBox, prefsBox, histBox);
+      const accountBox = h("div", { class: "sec" });
+      body.append(listBox, stateBox, accountBox, prefsBox, histBox);
+
+      // Cuenta: con sesión los canales que limiten quién escucha pueden reconocerte; sin ella escuchas como anónimo
+      const renderAccount = () => {
+        accountBox.textContent = "";
+        const v = D.viewer;
+        // «Vencida»: el servidor no reconoció ESTA sesión guardada. Si vuelves a iniciar sesión se guarda una nueva (otra marca de tiempo) y ya no cuenta.
+        const stale = !!v && mod.staleKey === v.token + "|" + v.at;
+        const valid = !!D.viewerToken() && !stale;
+        accountBox.append(h("h3", null, t("tr.account.title")));
+        if (valid) {
+          accountBox.append(kit.row(t("tr.account.signedIn", { login: v.login || "" }), t("tr.account.hint"),
+            h("button", { class: "btn", onclick: () => D.clearViewer() }, t("tr.account.signOut"))));
+          return;
+        }
+        accountBox.append(
+          kit.notice(v ? t("tr.account.expired") : t("tr.account.anon"), v ? "warn" : ""),
+          h("div", { style: "height:8px" }),
+          h("button", { class: "btn primary", onclick: () => window.open("https://decatron.net/extension/login", "_blank", "noopener") }, t("tr.account.signIn")));
+      };
 
       const renderList = () => {
         const s = mod.state;
@@ -86,7 +106,7 @@
         }
         // Qué decirle al espectador: lo más urgente primero (error, canal apagado, conectando, nadie habla)
         let sub = t("tr.onlyYou"), tone = s.live ? "ok" : "", retry = false;
-        if (s.selected && s.connection === "denied") { sub = t("tr.denied." + (DENIED.includes(s.denied) ? s.denied : "paused")); tone = "warn"; retry = ["full", "ip_limit", "rate_limited", "busy", "languages_full"].includes(s.denied); }
+        if (s.selected && s.connection === "denied") { sub = t("tr.denied." + (DENIED.includes(s.denied) ? s.denied : "paused")); tone = "warn"; retry = ["full", "ip_limit", "user_limit", "rate_limited", "busy", "languages_full"].includes(s.denied); }
         else if (s.selected && s.connection === "error") { sub = t("tr.error"); tone = "warn"; retry = true; }
         else if (!s.live) sub = t("tr.notLive");
         else if (s.connection === "connecting") sub = t("tr.connecting");
@@ -147,12 +167,13 @@
           kit.toggleRow(t("tr.captionSource"), null, D.prefs.captionSource, (v) => D.setPrefs({ captionSource: v })),
           kit.slider(t("tr.captionSize"), D.prefs.captionSize, 14, 36, 1, "px", (v) => D.setPrefs({ captionSize: v }))));
 
-      const renderAll = () => { renderList(); renderState(); renderHistory(); };
+      const renderAll = () => { renderList(); renderState(); renderAccount(); renderHistory(); };
       renderAll();
       const off = D.on("module-update", (id) => { if (id === "translation") renderAll(); });
+      const offViewer = D.on("viewer", renderAccount);
       // "En vivo pero nadie habla" depende del reloj, no de un evento: se revisa mientras el panel está abierto
       const tick = setInterval(renderList, 5000);
-      return () => { off(); clearInterval(tick); };
+      return () => { off(); offViewer(); clearInterval(tick); };
     },
   };
 
@@ -242,7 +263,9 @@
 
   async function joinHub(cur, lang) {
     if (cur.hub) { cur.hub.close(); cur.hub = null; }
-    const hub = new window.__decatronSignalR(HUB);
+    // Con sesión iniciada en la extensión el servidor reconoce a la persona (?access_token=); sin sesión o con el token vencido, anónimo.
+    const token = D.viewerToken();
+    const hub = new window.__decatronSignalR(token ? HUB + "?access_token=" + encodeURIComponent(token) : HUB);
     cur.hub = hub;
     hub.onstate = (s) => { if (mod.current === cur) mod.setState({ connection: s }); };
     hub.on("Status", (st) => {
@@ -277,6 +300,8 @@
       }
       mod.joinedAt = Date.now();
       mod.setState({ live: !!(st && st.active), listeners: (st && st.listeners) || {}, connection: "connected" });
+      // Si hay token pero el servidor no reconoce a nadie, la sesión venció o se revocó: se pide iniciar sesión otra vez
+      if (token) hub.invoke("Whoami").then((w) => { if (mod.current === cur && w && w.identified === false) { mod.staleKey = D.viewer ? D.viewer.token + "|" + D.viewer.at : null; D.emit("viewer", D.viewer); } }).catch(() => {});
       // Al reconectar el WS hay que volver a unirse al grupo.
       const rejoin = (s) => { if (s === "connected" && mod.current === cur) hub.invoke("Join", cur.login, mod.state.selected).catch(() => {}); };
       const prev = hub.onstate; hub.onstate = (s) => { prev(s); rejoin(s); };

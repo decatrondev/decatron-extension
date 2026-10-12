@@ -64,6 +64,7 @@
 
   (async () => {
     await D.loadPrefs();
+    await D.loadViewer();
     console.info(`[decatron] Decatron ${D.version} cargada`);
     D.channel = channelFromPath();
     lastPath = location.pathname;

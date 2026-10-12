@@ -99,7 +99,8 @@ await page.locator('.lang', { hasText: 'English' }).click();
 await page.waitForFunction(() => /maximum of listeners/i.test(document.querySelector('.dialog .notice')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
 let n = await notice();
 check(/maximum of listeners/i.test(n), 'entrada rechazada por tope de oyentes se explica', `«${n}»`);
-check((await page.locator('.dialog .btn.primary').count()) > 0, 'ofrece reintentar cuando el motivo es pasajero');
+const retryBtn = () => page.locator('.dialog .btn.primary', { hasText: /try again/i }).count();
+check((await retryBtn()) > 0, 'ofrece reintentar cuando el motivo es pasajero');
 
 // 2) Motivo que no se reintenta (el canal no ofrece ese idioma): sin botón de reintento
 mode = { type: 'deny', reason: 'language' };
@@ -108,7 +109,7 @@ await page.locator('.lang', { hasText: 'English' }).click();
 await page.waitForFunction(() => /doesn.t offer that language/i.test(document.querySelector('.dialog .notice')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
 n = await notice();
 check(/doesn.t offer that language/i.test(n), 'motivo «idioma no ofrecido»', `«${n}»`);
-check((await page.locator('.dialog .btn.primary').count()) === 0, 'sin botón de reintento cuando no tiene sentido');
+check((await retryBtn()) === 0, 'sin botón de reintento cuando no tiene sentido');
 
 // 3) Entra y luego el streamer usa el botón de pánico: lo sacan y se le dice
 mode = { type: 'allow' };
