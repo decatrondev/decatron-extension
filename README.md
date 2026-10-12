@@ -11,7 +11,7 @@ own, all inside a single panel. It works on Chrome, Edge, Brave and Opera; there
 | **Translation** | ✅ | Listen to the stream in your language with the dubbing of [Decatron live translation](https://decatron.net/docs/translation). Only you hear it. |
 | **Emotes** | ✅ | Draws **7TV, BetterTTV, FrankerFaceZ** and **Decatron's own** emotes (the ones each channel's community uploads) in chat, without installing other extensions. Includes the `:` picker. |
 | **Multi-view** | ✅ | Adds the channel you are watching to your [Multi-view](https://decatron.net/docs/multiview) (several Twitch and Kick channels on one screen). If you already have one open, the channel is added there without reloading it, so the videos do not cut. |
-| **Channel points** | ✅ | Claims the channel points **bonus** (the chest) by itself a few seconds after it appears, with a random 1–5 s delay and a "+50 points" notice. **Off by default**, per-channel switch, only the bonus: it does not redeem rewards or bet points. Notices when FrankerFaceZ or BetterTTV are detected (they can claim too; the bonus is claimed once). |
+| **Channel points** | ✅ | Claims the channel points **bonus** (the chest) by itself a few seconds after it appears, with a random 1–5 s delay and a "+50 points" notice. **Off by default**, per-channel switch, only the bonus: it does not redeem rewards or bet points. It also works in the official Twitch chat embedded in the Multi-view (`decatron.net/multi`), with the same switch and the same excluded channels, as long as you are signed in to Twitch inside that chat. Notices when FrankerFaceZ or BetterTTV are detected (they can claim too; the bonus is claimed once). |
 
 ## How to use it
 
@@ -53,6 +53,7 @@ src/
   kit.js               form pieces for the panels
   shell.js + panel.css player button and panel (Shadow DOM)
   modules/             translation.js · emotes.js · multiview.js · points.js
+  points-embed.js      channel points inside the embedded official chat (Multi-view)
   multiview-page.js    runs on decatron.net/multi: passes "add this channel" from the extension to the page
   login-page.js        runs ONLY on decatron.net/extension/login: receives the viewer token from the page and stores it
   emote-picker.js      the ":" picker
@@ -100,6 +101,7 @@ npm run test:picker    # ":" picker against a real Slate editor
 npm run test:ffz -- <live-channel>      # next to FrankerFaceZ (loads its script on the real Twitch)
 npm run test:login     # sign-in: the login page hands over the viewer token, it is stored, sent to the hub, expired/unrecognized tokens, another decatron.net page cannot store one, sign out (local simulated hub)
 npm run test:denied    # translation: the extension explains when the channel refuses the join (listener cap, pause, language not offered, followers/subscribers/sign-in levels with the days or tier asked) — local simulated hub
+npm run test:points-embed  # same bonus claim inside the embedded official chat iframe (Multi-view): off by default, delay, destructive button, excluded channel
 npm run test:points    # channel points module against a replica of the bonus chest: off by default, delay, notice, destructive button, blocked channel, FFZ detection (no network or account needed)
 npm run test:multiview # Multi-view module: opens one, adds a second channel without reloading it and checks the duplicate notice (real decatron.net)
 npm run test:video && npm run test:e2e   # translation against a replica of the player (with DURATION=3 it only checks the interface)
