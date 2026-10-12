@@ -1,6 +1,6 @@
 {
   "name": "decatron-extension",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Extensión de navegador de Decatron para Twitch: traducción, emotes y más, por módulos",
   "type": "module",

@@ -1,10 +1,12 @@
 // Popup de la barra del navegador: un resumen del canal, un interruptor por módulo y el atajo al panel dentro de Twitch.
 const { t } = window.__dctI18n;
 const $ = (id) => document.getElementById(id);
+// Cada módulo con su valor de fábrica: el de puntos nace apagado y el resto encendido (igual que `defaults.enabled` de cada módulo).
 const MODULES = [
-  { id: "translation", name: () => t("tr.name") },
-  { id: "emotes", name: () => t("em.name") },
-  { id: "points", name: () => t("pt.name"), soon: true },
+  { id: "translation", name: () => t("tr.name"), defaultEnabled: true },
+  { id: "emotes", name: () => t("em.name"), defaultEnabled: true },
+  { id: "multiview", name: () => t("mv.name"), defaultEnabled: true },
+  { id: "points", name: () => t("pt.name"), defaultEnabled: false },
 ];
 
 $("mods-title").textContent = t("pop.modules");
@@ -27,7 +29,7 @@ function renderModules(enabledById) {
     } else {
       const input = document.createElement("input");
       input.type = "checkbox";
-      input.checked = enabledById[m.id] !== false;
+      input.checked = enabledById[m.id] == null ? m.defaultEnabled : enabledById[m.id] !== false;
       input.onchange = () => {
         chrome.storage.sync.get({ modules: {} }, (v) => {
           const modules = { ...v.modules, [m.id]: { ...(v.modules[m.id] || {}), enabled: input.checked } };
@@ -62,5 +64,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (st.login && tr && tr.enabled) add(tr.status ? tr.status.text : t("pop.translationOff"));
     const em = st.modules && st.modules.emotes;
     if (st.login && em) add(em.enabled ? (em.status ? em.status.text : t("pop.emotesOff")) : t("pop.emotesOff"));
+    const pt = st.modules && st.modules.points;
+    if (st.login && pt && pt.enabled && pt.status) add(pt.status.text);
   });
 });

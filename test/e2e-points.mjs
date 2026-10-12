@@ -76,6 +76,25 @@ check(/FrankerFaceZ/.test(panel), 'el panel avisa que detectó FrankerFaceZ');
 check(/Ready: it claims the bonus/.test(panel), 'el panel muestra «Listo» con el sistema de puntos presente');
 await page.screenshot({ path: path.join(here, 'shot-points-panel.png') });
 
+// 7) Popup de la barra del navegador: lista los 4 módulos, ya sin «Pronto», y el de puntos nace apagado
+await setSettings({});               // vuelve a los valores de fábrica del módulo de puntos
+await sw.evaluate(() => new Promise((r) => chrome.storage.sync.remove('modules', r)));
+const extId = new URL(sw.url()).host;
+const popup = await ctx.newPage();
+await popup.goto(`chrome-extension://${extId}/popup.html`);
+await popup.waitForTimeout(500);
+const rows = await popup.locator('#mods .row').allInnerTexts();
+check(rows.length === 4, `el popup lista 4 módulos: ${rows.map((x) => x.trim()).join(' | ')}`);
+check(!rows.some((x) => /soon|pronto/i.test(x)), 'ningún módulo aparece como «Pronto»');
+const ptRow = popup.locator('#mods .row', { hasText: 'Channel points' });
+check(!(await ptRow.locator('input').isChecked()), 'puntos de canal sale apagado por defecto');
+check(await popup.locator('#mods .row', { hasText: 'Multi-view' }).locator('input').isChecked(), 'Multi-view sale encendido por defecto');
+await ptRow.locator('input').check();
+await popup.waitForTimeout(400);
+const saved = await sw.evaluate(() => new Promise((r) => chrome.storage.sync.get({ modules: {} }, (v) => r(v.modules.points))));
+check(saved && saved.enabled === true, `al encenderlo en el popup se guarda: ${JSON.stringify(saved)}`);
+await popup.screenshot({ path: path.join(here, 'shot-popup.png') });
+
 await ctx.close();
 console.log(failed ? `${failed} comprobación(es) fallaron` : 'todo bien');
 process.exit(failed ? 1 : 0);
