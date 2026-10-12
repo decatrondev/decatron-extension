@@ -30,7 +30,7 @@
   }
 
   // Motivos con los que el servidor puede rechazar la entrada (límites de acceso del canal)
-  const DENIED = ["paused", "full", "ip_limit", "user_limit", "languages_full", "language", "rate_limited", "busy"];
+  const DENIED = ["paused", "full", "ip_limit", "user_limit", "languages_full", "language", "rate_limited", "busy", "login", "link_twitch", "follow", "sub", "vip", "mod", "list", "blocked", "check_failed"];
 
   const mod = {
     id: "translation",
@@ -106,7 +106,14 @@
         }
         // Qué decirle al espectador: lo más urgente primero (error, canal apagado, conectando, nadie habla)
         let sub = t("tr.onlyYou"), tone = s.live ? "ok" : "", retry = false;
-        if (s.selected && s.connection === "denied") { sub = t("tr.denied." + (DENIED.includes(s.denied) ? s.denied : "paused")); tone = "warn"; retry = ["full", "ip_limit", "user_limit", "rate_limited", "busy", "languages_full"].includes(s.denied); }
+        let loginBtn = false;
+        if (s.selected && s.connection === "denied") {
+          const d = s.deniedDetail || {};
+          sub = t("tr.denied." + (DENIED.includes(s.denied) ? s.denied : "paused"), { days: d.days || 0, tier: d.tier || 1 });
+          tone = "warn";
+          retry = ["full", "ip_limit", "user_limit", "rate_limited", "busy", "languages_full", "check_failed"].includes(s.denied);
+          loginBtn = s.denied === "login";
+        }
         else if (s.selected && s.connection === "error") { sub = t("tr.error"); tone = "warn"; retry = true; }
         else if (!s.live) sub = t("tr.notLive");
         else if (s.connection === "connecting") sub = t("tr.connecting");
@@ -114,7 +121,9 @@
         else if (s.selected && s.connection === "connected" && Date.now() - (s.lastSegAt || mod.joinedAt || 0) > tuning.silentAfterSec * 1000) sub = t("tr.waitSpeech");
         const note = kit.notice(sub, tone);
         listBox.append(h("h3", null, t("tr.listenIn")),
-          retry ? h("div", { class: "notice-row" }, note, h("button", { class: "btn primary", onclick: () => retryConnect() }, t("tr.retry"))) : note);
+          retry ? h("div", { class: "notice-row" }, note, h("button", { class: "btn primary", onclick: () => retryConnect() }, t("tr.retry")))
+            : loginBtn ? h("div", { class: "notice-row" }, note, h("button", { class: "btn primary", onclick: () => window.open("https://decatron.net/extension/login", "_blank", "noopener") }, t("tr.account.signIn")))
+            : note);
         const chips = h("div", { class: "chips", style: "margin-top:12px" });
         const add = (lang, label, n) => chips.append(h("button", {
           class: "lang" + (s.selected === lang ? " on" : ""), onclick: () => select(lang, true),
@@ -286,7 +295,7 @@
       if (mod.current !== cur) return;
       cur.player.stop();
       if (cur.hub) { cur.hub.close(); cur.hub = null; }
-      mod.setState({ connection: "denied", denied: (m && m.reason) || "paused", live: false });
+      mod.setState({ connection: "denied", denied: (m && m.reason) || "paused", deniedDetail: { days: m && m.minFollowDays, tier: m && m.minSubTier }, live: false });
     });
     try {
       await hub.connect();
@@ -295,7 +304,7 @@
       // Entrada rechazada por los límites del canal (pausa, tope de oyentes, demasiadas conexiones…)
       if (st && st.ok === false) {
         hub.close(); cur.hub = null;
-        mod.setState({ connection: "denied", denied: st.reason || "paused", live: false });
+        mod.setState({ connection: "denied", denied: st.reason || "paused", deniedDetail: { days: st.minFollowDays, tier: st.minSubTier }, live: false });
         return;
       }
       mod.joinedAt = Date.now();

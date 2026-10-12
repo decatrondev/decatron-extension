@@ -74,7 +74,7 @@ onFrameText.push((raw) => {
     let msg; try { msg = JSON.parse(part); } catch { continue; }
     if (msg.protocol) { sock.send('{}' + SEP); continue; }
     if (msg.type === 1 && msg.target === 'Join') {
-      if (mode.type === 'deny') sock.send(frame({ type: 3, invocationId: msg.invocationId, result: { ok: false, error: 'denied', reason: mode.reason, active: false } }));
+      if (mode.type === 'deny') sock.send(frame({ type: 3, invocationId: msg.invocationId, result: { ok: false, error: 'denied', reason: mode.reason, active: false, minFollowDays: mode.days, minSubTier: mode.tier } }));
       else {
         sock.send(frame({ type: 3, invocationId: msg.invocationId, result: { active: true, listeners: { en: 1 } } }));
         setTimeout(() => sock.send(frame({ type: 1, target: 'Denied', arguments: [{ reason: 'paused' }] })), 1200);
@@ -110,6 +110,28 @@ await page.waitForFunction(() => /doesn.t offer that language/i.test(document.qu
 n = await notice();
 check(/doesn.t offer that language/i.test(n), 'motivo «idioma no ofrecido»', `«${n}»`);
 check((await retryBtn()) === 0, 'sin botón de reintento cuando no tiene sentido');
+
+
+// 3b) Nivel de acceso del canal: seguidores (dice cuántos días) y pedir iniciar sesión (ofrece el botón)
+mode = { type: 'deny', reason: 'follow', days: 7 };
+await page.locator('.lang', { hasText: 'Original' }).click();
+await page.locator('.lang', { hasText: 'English' }).click();
+await page.waitForFunction(() => /followers/i.test(document.querySelector('.dialog .notice')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
+n = await notice();
+check(/followers \(7 days or more\)/i.test(n), 'nivel «seguidores»: explica los días que se piden', `«${n}»`);
+mode = { type: 'deny', reason: 'sub', tier: 2 };
+await page.locator('.lang', { hasText: 'Original' }).click();
+await page.locator('.lang', { hasText: 'English' }).click();
+await page.waitForFunction(() => /subscribers/i.test(document.querySelector('.dialog .notice')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
+n = await notice();
+check(/subscribers \(tier 2 or higher\)/i.test(n), 'nivel «suscriptores»: explica el nivel que se pide', `«${n}»`);
+mode = { type: 'deny', reason: 'login' };
+await page.locator('.lang', { hasText: 'Original' }).click();
+await page.locator('.lang', { hasText: 'English' }).click();
+await page.waitForFunction(() => /sign in to listen/i.test(document.querySelector('.dialog .notice')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
+n = await notice();
+check(/asks you to sign in/i.test(n), 'nivel «con sesión»: pide iniciar sesión', `«${n}»`);
+check((await page.locator('.dialog .btn.primary', { hasText: /sign in/i }).count()) > 0, 'ofrece el botón Sign in en el aviso');
 
 // 3) Entra y luego el streamer usa el botón de pánico: lo sacan y se le dice
 mode = { type: 'allow' };

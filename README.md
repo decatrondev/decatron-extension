@@ -99,7 +99,7 @@ npm run test:twitch -- <live-channel>   # button, panel, emote loading and repla
 npm run test:picker    # ":" picker against a real Slate editor
 npm run test:ffz -- <live-channel>      # next to FrankerFaceZ (loads its script on the real Twitch)
 npm run test:login     # sign-in: the login page hands over the viewer token, it is stored, sent to the hub, expired/unrecognized tokens, another decatron.net page cannot store one, sign out (local simulated hub)
-npm run test:denied    # translation: the extension explains when the channel refuses the join (listener cap, pause, language not offered) — local simulated hub
+npm run test:denied    # translation: the extension explains when the channel refuses the join (listener cap, pause, language not offered, followers/subscribers/sign-in levels with the days or tier asked) — local simulated hub
 npm run test:points    # channel points module against a replica of the bonus chest: off by default, delay, notice, destructive button, blocked channel, FFZ detection (no network or account needed)
 npm run test:multiview # Multi-view module: opens one, adds a second channel without reloading it and checks the duplicate notice (real decatron.net)
 npm run test:video && npm run test:e2e   # translation against a replica of the player (with DURATION=3 it only checks the interface)
