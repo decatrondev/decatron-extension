@@ -44,11 +44,53 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     getEmotes(msg).then(reply).catch((e) => reply({ ok: false, error: String(e && e.message || e) }));
     return true;
   }
+  if (msg.type === "multiviewAdd") { multiviewAdd(msg.login).then(reply).catch(() => reply({ ok: false, mode: "error" })); return true; }
+  if (msg.type === "multiviewOpen") { multiviewOpen().then(reply).catch(() => reply({ ok: false })); return true; }
   if (msg.type === "channel" && sender.tab) {
     stateByTab.set(sender.tab.id, msg);
     paint(sender.tab.id, msg);
   }
 });
+
+// ───────────── Multi-view (decatron.net/multi)
+const MV = "https://decatron.net/multi";
+const MV_URLS = [MV, MV + "/*"];
+
+async function focusTab(tab) {
+  try { await chrome.tabs.update(tab.id, { active: true }); await chrome.windows.update(tab.windowId, { focused: true }); } catch { /* la ventana ya no existe */ }
+}
+
+/** Suma un canal de Twitch a un Multi-view abierto (sin recargarlo, si su página contesta) o abre uno nuevo con ese canal. */
+async function multiviewAdd(login) {
+  login = String(login || "").toLowerCase();
+  if (!/^[a-z0-9_]{2,40}$/.test(login)) return { ok: false, mode: "error" };
+  const [tab] = await chrome.tabs.query({ url: MV_URLS });
+  if (!tab) {
+    await chrome.tabs.create({ url: `${MV}/${encodeURIComponent(login)}` });
+    return { ok: true, mode: "opened" };
+  }
+  // 1) La página del Multi-view lo agrega sola (los videos no se cortan)
+  const answer = await new Promise((resolve) => {
+    try { chrome.tabs.sendMessage(tab.id, { type: "mvAdd", channel: login }, (r) => resolve(chrome.runtime.lastError ? null : r)); }
+    catch { resolve(null); }
+  });
+  if (answer && answer.mode) { if (answer.mode !== "error") await focusTab(tab); return { ok: answer.mode !== "error", ...answer }; }
+
+  // 2) Respaldo (la pestaña se abrió antes de instalar la extensión o la página no contestó): se cambia la dirección
+  const url = new URL(tab.url);
+  const segs = url.pathname.split("/").filter(Boolean).slice(1);
+  if (segs.some((x) => x.toLowerCase() === login)) { await focusTab(tab); return { ok: true, mode: "already", count: segs.length }; }
+  url.pathname = "/multi/" + [...segs, login].map(encodeURIComponent).join("/");
+  await chrome.tabs.update(tab.id, { url: url.toString(), active: true });
+  await focusTab(tab);
+  return { ok: true, mode: "added", count: segs.length + 1 };
+}
+
+async function multiviewOpen() {
+  const [tab] = await chrome.tabs.query({ url: MV_URLS });
+  if (tab) await focusTab(tab); else await chrome.tabs.create({ url: MV });
+  return { ok: true };
+}
 
 chrome.tabs.onRemoved.addListener((id) => stateByTab.delete(id));
 

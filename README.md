@@ -10,6 +10,7 @@ own, all inside a single panel. It works on Chrome, Edge, Brave and Opera; there
 |---|---|---|
 | **Translation** | ✅ | Listen to the stream in your language with the dubbing of [Decatron live translation](https://decatron.net/docs/translation). Only you hear it. |
 | **Emotes** | ✅ | Draws **7TV, BetterTTV, FrankerFaceZ** and **Decatron's own** emotes (the ones each channel's community uploads) in chat, without installing other extensions. Includes the `:` picker. |
+| **Multi-view** | ✅ | Adds the channel you are watching to your [Multi-view](https://decatron.net/docs/multiview) (several Twitch and Kick channels on one screen). If you already have one open, the channel is added there without reloading it, so the videos do not cut. |
 | **Channel points** | 🔜 | Claim the channel points bonus automatically and more automations. |
 
 ## How to use it
@@ -51,7 +52,8 @@ src/
   core.js              preferences, module registry, events and utilities (window.__decatron)
   kit.js               form pieces for the panels
   shell.js + panel.css player button and panel (Shadow DOM)
-  modules/             translation.js · emotes.js · points.js
+  modules/             translation.js · emotes.js · multiview.js · points.js
+  multiview-page.js    runs on decatron.net/multi: passes "add this channel" from the extension to the page
   emote-picker.js      the ":" picker
   captions-ui.js       captions and audio notice over the video (translation)
   audio.js, dsp.js, signalr-lite.js
@@ -66,7 +68,7 @@ and settings saving come for free.
 
 ## Permissions
 
-Only `storage`, and access to: `twitch.tv` (the page), `decatron.net` (translation and own emotes),
+Only `storage`, and access to: `twitch.tv` (the page), `decatron.net` (translation, own emotes and the Multi-view page: it only receives "add this channel"),
 `7tv.io`, `api.betterttv.net` and `api.frankerfacez.com` (their emotes) and `gql.twitch.tv` (the channel
 id, which 7TV and BTTV ask for by id). No account or login.
 
@@ -95,6 +97,7 @@ npm run test:dict      # emote dictionary against real 7TV, BTTV, FFZ and Twitch
 npm run test:twitch -- <live-channel>   # button, panel, emote loading and replacement against the REAL Twitch (public chat)
 npm run test:picker    # ":" picker against a real Slate editor
 npm run test:ffz -- <live-channel>      # next to FrankerFaceZ (loads its script on the real Twitch)
+npm run test:multiview # Multi-view module: opens one, adds a second channel without reloading it and checks the duplicate notice (real decatron.net)
 npm run test:video && npm run test:e2e   # translation against a replica of the player (with DURATION=3 it only checks the interface)
 npm run test:dsp       # voice stretching (WSOLA), caption timings and validation of the server values; no network
 npm run test:catchup   # catch-up mode, history, replay and captions-only in a real Chromium with a simulated hub (needs ffmpeg)

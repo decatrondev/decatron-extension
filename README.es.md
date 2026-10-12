@@ -10,6 +10,7 @@ Página pública: <https://decatron.net/translate>.
 |---|---|---|
 | **Traducción** | ✅ | Escucha el stream en tu idioma con el doblaje de la [traducción en vivo de Decatron](https://decatron.net/docs/translation). Solo tú lo oyes. |
 | **Emotes** | ✅ | Dibuja en el chat los emotes de **7TV, BetterTTV, FrankerFaceZ** y los **propios de Decatron** (los que sube la comunidad de cada canal), sin instalar otras extensiones. Incluye el selector con `:`. |
+| **Multi-view** | ✅ | Suma el canal que estás viendo a tu [Multi-view](https://decatron.net/docs/multiview) (varios canales de Twitch y Kick en una sola pantalla). Si ya tienes uno abierto, el canal se agrega ahí sin recargarlo, así que los videos no se cortan. |
 | **Puntos de canal** | 🔜 | Cobrar solo el bonus de puntos del canal y más automatismos. |
 
 ## Cómo se usa
@@ -44,7 +45,8 @@ src/
   core.js              preferencias, registro de módulos, eventos y utilidades (window.__decatron)
   kit.js               piezas de formulario de los paneles
   shell.js + panel.css botón del player y panel (Shadow DOM)
-  modules/             translation.js · emotes.js · points.js
+  modules/             translation.js · emotes.js · multiview.js · points.js
+  multiview-page.js    corre en decatron.net/multi: pasa «agrega este canal» de la extensión a la página
   emote-picker.js      selector con ":"
   captions-ui.js       subtítulos y aviso de audio sobre el video (traducción)
   audio.js, dsp.js, signalr-lite.js
@@ -58,7 +60,7 @@ popup, el interruptor y el guardado de ajustes salen solos.
 
 ## Permisos
 
-Solo `storage`, y acceso a: `twitch.tv` (la página), `decatron.net` (traducción y emotes propios), `7tv.io`, `api.betterttv.net`
+Solo `storage`, y acceso a: `twitch.tv` (la página), `decatron.net` (traducción, emotes propios y la página del Multi-view: solo recibe «agrega este canal»), `7tv.io`, `api.betterttv.net`
 y `api.frankerfacez.com` (sus emotes) y `gql.twitch.tv` (el id del canal, que 7TV y BTTV piden por id). Sin cuenta ni login.
 
 ## Instalar en modo desarrollador
@@ -86,6 +88,7 @@ npm run test:dict      # diccionario de emotes contra 7TV, BTTV, FFZ y Twitch re
 npm run test:twitch -- <canal-en-vivo>   # botón, panel, carga de emotes y reemplazo contra el Twitch REAL (chat público)
 npm run test:picker    # selector con ":" contra un editor Slate de verdad
 npm run test:ffz -- <canal-en-vivo>      # junto a FrankerFaceZ (carga su script en el Twitch real)
+npm run test:multiview # módulo Multi-view: abre uno, suma un segundo canal sin recargarlo y comprueba el aviso de duplicado (decatron.net real)
 npm run test:video && npm run test:e2e   # traducción contra una réplica del player (con DURATION=3 solo mira la interfaz)
 npm run test:dsp       # estiramiento de voz (WSOLA), tiempos de subtítulos y validación de los valores del servidor; sin red
 npm run test:catchup   # modo alcance, historial, repetir y solo subtítulos en Chromium real con un hub simulado (necesita ffmpeg)
