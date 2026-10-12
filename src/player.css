@@ -70,3 +70,12 @@
   font-family: inherit; font-size: 13px; line-height: 1.35;
   transform: translateZ(0);
 }
+
+/* Aviso «+N puntos» del módulo de puntos de canal: flota junto al saldo y se va solo. */
+.dct-pts-toast {
+  position: fixed; z-index: 2147483000; padding: 6px 12px; border-radius: 999px; pointer-events: none;
+  background: #9146ff; color: #fff; border: 1px solid #a970ff;
+  font: 700 13px/1 Inter, system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  animation: dct-pts-up 3.4s ease-out forwards;
+}
+@keyframes dct-pts-up { 0% { opacity: 0; transform: translateY(6px); } 10% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px); } }

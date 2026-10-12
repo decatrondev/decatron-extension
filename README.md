@@ -11,7 +11,7 @@ own, all inside a single panel. It works on Chrome, Edge, Brave and Opera; there
 | **Translation** | ✅ | Listen to the stream in your language with the dubbing of [Decatron live translation](https://decatron.net/docs/translation). Only you hear it. |
 | **Emotes** | ✅ | Draws **7TV, BetterTTV, FrankerFaceZ** and **Decatron's own** emotes (the ones each channel's community uploads) in chat, without installing other extensions. Includes the `:` picker. |
 | **Multi-view** | ✅ | Adds the channel you are watching to your [Multi-view](https://decatron.net/docs/multiview) (several Twitch and Kick channels on one screen). If you already have one open, the channel is added there without reloading it, so the videos do not cut. |
-| **Channel points** | 🔜 | Claim the channel points bonus automatically and more automations. |
+| **Channel points** | ✅ | Claims the channel points **bonus** (the chest) by itself a few seconds after it appears, with a random 1–5 s delay and a "+50 points" notice. **Off by default**, per-channel switch, only the bonus: it does not redeem rewards or bet points. Notices when FrankerFaceZ or BetterTTV are detected (they can claim too; the bonus is claimed once). |
 
 ## How to use it
 
@@ -97,6 +97,7 @@ npm run test:dict      # emote dictionary against real 7TV, BTTV, FFZ and Twitch
 npm run test:twitch -- <live-channel>   # button, panel, emote loading and replacement against the REAL Twitch (public chat)
 npm run test:picker    # ":" picker against a real Slate editor
 npm run test:ffz -- <live-channel>      # next to FrankerFaceZ (loads its script on the real Twitch)
+npm run test:points    # channel points module against a replica of the bonus chest: off by default, delay, notice, destructive button, blocked channel, FFZ detection (no network or account needed)
 npm run test:multiview # Multi-view module: opens one, adds a second channel without reloading it and checks the duplicate notice (real decatron.net)
 npm run test:video && npm run test:e2e   # translation against a replica of the player (with DURATION=3 it only checks the interface)
 npm run test:dsp       # voice stretching (WSOLA), caption timings and validation of the server values; no network

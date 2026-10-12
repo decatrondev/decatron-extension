@@ -11,7 +11,7 @@ Página pública: <https://decatron.net/translate>.
 | **Traducción** | ✅ | Escucha el stream en tu idioma con el doblaje de la [traducción en vivo de Decatron](https://decatron.net/docs/translation). Solo tú lo oyes. |
 | **Emotes** | ✅ | Dibuja en el chat los emotes de **7TV, BetterTTV, FrankerFaceZ** y los **propios de Decatron** (los que sube la comunidad de cada canal), sin instalar otras extensiones. Incluye el selector con `:`. |
 | **Multi-view** | ✅ | Suma el canal que estás viendo a tu [Multi-view](https://decatron.net/docs/multiview) (varios canales de Twitch y Kick en una sola pantalla). Si ya tienes uno abierto, el canal se agrega ahí sin recargarlo, así que los videos no se cortan. |
-| **Puntos de canal** | 🔜 | Cobrar solo el bonus de puntos del canal y más automatismos. |
+| **Puntos de canal** | ✅ | Reclama solo el **bonus** de puntos (el cofre) unos segundos después de que aparece, con un retardo aleatorio de 1 a 5 s y un aviso «+50 puntos». **Apagado por defecto**, interruptor por canal, solo el bonus: no canjea recompensas ni apuesta puntos. Avisa si detecta FrankerFaceZ o BetterTTV (también pueden reclamar; el bonus se reclama una sola vez). |
 
 ## Cómo se usa
 
@@ -88,6 +88,7 @@ npm run test:dict      # diccionario de emotes contra 7TV, BTTV, FFZ y Twitch re
 npm run test:twitch -- <canal-en-vivo>   # botón, panel, carga de emotes y reemplazo contra el Twitch REAL (chat público)
 npm run test:picker    # selector con ":" contra un editor Slate de verdad
 npm run test:ffz -- <canal-en-vivo>      # junto a FrankerFaceZ (carga su script en el Twitch real)
+npm run test:points    # módulo de puntos de canal contra una réplica del cofre del bonus: apagado por defecto, retardo, aviso, botón destructivo, canal bloqueado y detección de FFZ (no necesita red ni cuenta de Twitch)
 npm run test:multiview # módulo Multi-view: abre uno, suma un segundo canal sin recargarlo y comprueba el aviso de duplicado (decatron.net real)
 npm run test:video && npm run test:e2e   # traducción contra una réplica del player (con DURATION=3 solo mira la interfaz)
 npm run test:dsp       # estiramiento de voz (WSOLA), tiempos de subtítulos y validación de los valores del servidor; sin red
