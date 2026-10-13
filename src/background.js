@@ -1,6 +1,6 @@
 // Service worker: badge del icono según lo que reporta la pestaña activa, fetch al backend (CORS) y diccionarios de emotes.
 // En Firefox este archivo corre como "background script" y emote-dict.js viene antes en el manifest.
-try { importScripts("emote-dict.js", "lurk.js"); } catch { /* Firefox: ya están cargados por el manifest */ }
+try { importScripts("emote-dict.js"); } catch { /* Firefox: ya está cargado por el manifest */ }
 
 const stateByTab = new Map();
 const API = "https://decatron.net";
@@ -45,12 +45,6 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   if (msg.type === "multiviewAdd") { multiviewAdd(msg.login).then(reply).catch(() => reply({ ok: false, mode: "error" })); return true; }
-  // Modo lurk: la página de /multi informa sus canales y cambia ajustes; las pestañas de lurk avisan que siguen vivas
-  if (msg.type === "lurkSync" && sender.tab) { DctLurk.sync(sender.tab.id, msg.channels).then(() => reply({ ok: true })).catch(() => reply({ ok: false })); return true; }
-  if (msg.type === "lurkSet") { DctLurk.setSettings(msg.patch || {}).then(() => reply({ ok: true })).catch(() => reply({ ok: false })); return true; }
-  if (msg.type === "lurkPing") { DctLurk.tick(); return; }
-  if (msg.type === "lurkTab" && sender.tab) { DctLurk.fromTab(sender.tab.id, msg.event, msg.data); return; }
-  if (msg.type === "lurkClearLog") { DctLurk.clearLog(); return; }
   if (msg.type === "multiviewOpen") { multiviewOpen().then(reply).catch(() => reply({ ok: false })); return true; }
   if (msg.type === "channel" && sender.tab) {
     stateByTab.set(sender.tab.id, msg);

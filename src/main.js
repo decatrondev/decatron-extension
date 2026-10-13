@@ -21,8 +21,7 @@
   /** Arranca los módulos que están encendidos y apaga los que no, sin tocar a los demás */
   function syncModules() {
     for (const m of D.modules.values()) {
-      // En una pestaña abierta por el modo lurk solo corren los puntos (lurk-tab.js marca window.__dctLurk)
-      const on = !m.soon && D.isEnabled(m.id) && (!window.__dctLurk || m.id === "points");
+      const on = !m.soon && D.isEnabled(m.id);
       if (on && !started.has(m.id)) {
         started.add(m.id);
         try { m.start && m.start(); m.onChannel && m.onChannel(D.channel); } catch (e) { console.warn("[decatron] arranque de", m.id, e); }

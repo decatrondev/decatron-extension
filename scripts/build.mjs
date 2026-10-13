@@ -17,7 +17,7 @@ if (target === 'firefox') {
   fs.rmSync(dir, { recursive: true, force: true });
   fs.cpSync(src, dir, { recursive: true });
   const m = { ...manifest };
-  m.background = { scripts: ['emote-dict.js', 'lurk.js', 'background.js'] };
+  m.background = { scripts: ['emote-dict.js', 'background.js'] };
   // El canal que miras se envía a decatron.net (traducción y emotes propios) y a 7TV, BTTV y FFZ (sus emotes)
   m.browser_specific_settings = { gecko: { id: 'decatron@decatron.net', strict_min_version: '140.0', data_collection_permissions: { required: ['browsingActivity'] } } };
   fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(m, null, 2) + '\n');

@@ -11,7 +11,6 @@ Página pública: <https://decatron.net/translate>.
 | **Traducción** | ✅ | Escucha el stream en tu idioma con el doblaje de la [traducción en vivo de Decatron](https://decatron.net/docs/translation). Solo tú lo oyes. |
 | **Emotes** | ✅ | Dibuja en el chat los emotes de **7TV, BetterTTV, FrankerFaceZ** y los **propios de Decatron** (los que sube la comunidad de cada canal), sin instalar otras extensiones. Incluye el selector con `:`. |
 | **Multi-view** | ✅ | Suma el canal que estás viendo a tu [Multi-view](https://decatron.net/docs/multiview) (varios canales de Twitch y Kick en una sola pantalla). Si ya tienes uno abierto, el canal se agrega ahí sin recargarlo, así que los videos no se cortan. |
-| **Modo lurk (Multi-view)** | ✅ | El player embebido del [Multi-view](https://decatron.net/docs/multiview) no suma puntos de canal ni rachas; una pestaña normal de twitch.tv sí, aunque esté silenciada y en segundo plano. Por cada canal de Twitch de un `decatron.net/multi` abierto, abre una pestaña normal de Twitch —silenciada, en calidad mínima, en una ventana chica aparte que se muestra unos segundos hasta que arranca el video (el navegador no arranca video en una pestaña que nunca se mostró) y luego se minimiza sola— que sí cuenta. **Apagado por defecto.** *Solo racha*: una vez por directo; lee la racha de visualizaciones del menú de puntos y cierra la pestaña apenas sube (30 minutos como máximo), hasta 3 a la vez. Cada pestaña de lurk revisa además que tenga sesión de Twitch y que el video avance (lo reanuda si Twitch lo pausa); el Multi-view muestra el estado y un historial de todo lo que pasó. *Completo*: abierta mientras el canal esté en vivo y en el Multi-view (puntos y, con el módulo de puntos encendido, cofres). Se elige desde la barra superior del Multi-view, con un ajuste por canal en cada casilla. Una pestaña que cierras a mano no se reabre en ese directo; al cerrar el Multi-view se cierran todas. En esas pestañas solo corre el módulo de puntos. |
 | **Puntos de canal** | ✅ | Reclama solo el **bonus** de puntos (el cofre) unos segundos después de que aparece, con un retardo aleatorio de 1 a 5 s y un aviso «+50 puntos». **Apagado por defecto**, interruptor por canal, solo el bonus: no canjea recompensas ni apuesta puntos. También funciona en el chat oficial de Twitch embebido en el Multi-view (`decatron.net/multi`), con el mismo interruptor y los mismos canales excluidos, siempre que hayas iniciado sesión en Twitch dentro de ese chat. Avisa si detecta FrankerFaceZ o BetterTTV (también pueden reclamar; el bonus se reclama una sola vez). |
 
 ## Cómo se usa
@@ -48,11 +47,7 @@ src/
   shell.js + panel.css botón del player y panel (Shadow DOM)
   modules/             translation.js · emotes.js · multiview.js · points.js
   points-embed.js      puntos de canal dentro del chat oficial embebido (Multi-view)
-  multiview-page.js    corre en decatron.net/multi: pasa «agrega este canal» de la extensión a la página, marca la página
-                       (versión de la extensión, modo lurk) y lleva y trae los canales, ajustes y estado del lurk
-  lurk.js              parte del service worker del modo lurk: abre, silencia y cierra las pestañas normales de Twitch
-  lurk-tab.js          corre primero en twitch.tv: en una pestaña de lurk (?dct-lurk=1) pide la calidad mínima, revisa la sesión de Twitch
-                       y que el video avance, lee la racha del menú de puntos; ahí solo corre el módulo de puntos
+  multiview-page.js    corre en decatron.net/multi: pasa «agrega este canal» de la extensión a la página
   login-page.js        corre SOLO en decatron.net/extension/login: recibe el token de espectador de la página y lo guarda
   emote-picker.js      selector con ":"
   captions-ui.js       subtítulos y aviso de audio sobre el video (traducción)
@@ -68,7 +63,7 @@ popup, el interruptor y el guardado de ajustes salen solos.
 ## Permisos
 
 Solo `storage`, y acceso a: `twitch.tv` (la página), `decatron.net` (traducción, emotes propios, la página del Multi-view —solo recibe «agrega este canal»— y la página `/extension/login`, que entrega el token de espectador: solo te identifica ante la traducción en vivo y no da acceso al panel), `7tv.io`, `api.betterttv.net`
-y `api.frankerfacez.com` (sus emotes) y `gql.twitch.tv` (el id del canal, que 7TV y BTTV piden por id, y si un canal en modo lurk está en vivo). El modo lurk abre, silencia y cierra solo las pestañas que crea él mismo. Sin cuenta ni login.
+y `api.frankerfacez.com` (sus emotes) y `gql.twitch.tv` (el id del canal, que 7TV y BTTV piden por id). Sin cuenta ni login.
 
 ## Instalar en modo desarrollador
 
@@ -97,7 +92,6 @@ npm run test:picker    # selector con ":" contra un editor Slate de verdad
 npm run test:ffz -- <canal-en-vivo>      # junto a FrankerFaceZ (carga su script en el Twitch real)
 npm run test:login     # inicio de sesión: la página de login entrega el token de espectador, se guarda, viaja al hub, tokens vencidos o no reconocidos, otra página de decatron.net no puede guardar uno y cerrar sesión (hub simulado local)
 npm run test:denied    # traducción: la extensión explica cuando el canal rechaza la entrada (tope de oyentes, pausa, idioma que no se ofrece, niveles de seguidores/suscriptores/sesión con los días o el nivel que se piden), con un hub simulado local
-npm run test:lurk      # modo lurk: marca en la página, apagado por defecto, solo racha (pestaña silenciada con la marca y calidad mínima, ventana aparte, lee la racha de una réplica del menú de puntos y se cierra al subir, o a los 30 min), pestaña sin sesión de Twitch, historial, una vez por directo, completo, se respeta una pestaña cerrada a mano, ajuste por canal, todo se cierra con el Multi-view (sin red ni cuenta)
 npm run test:points-embed  # el mismo reclamo del bonus dentro del iframe del chat oficial embebido (Multi-view): apagado por defecto, retardo, botón destructivo, canal excluido
 npm run test:points    # módulo de puntos de canal contra una réplica del cofre del bonus: apagado por defecto, retardo, aviso, botón destructivo, canal bloqueado y detección de FFZ (no necesita red ni cuenta de Twitch)
 npm run test:multiview # módulo Multi-view: abre uno, suma un segundo canal sin recargarlo y comprueba el aviso de duplicado (decatron.net real)
