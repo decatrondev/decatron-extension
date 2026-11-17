@@ -147,3 +147,7 @@ The server side lives in the bot repository ([`decatrondev/decatron`](https://gi
 `TranslationHub`, `LiveTranslationController`, `PublicEmotesController` and the emote catalog. User guides:
 <https://decatron.net/docs/translation> (viewer extension page) and <https://decatron.net/docs/chat>
 (emotes).
+
+## License
+
+GNU Affero General Public License v3.0. See [LICENSE](LICENSE).

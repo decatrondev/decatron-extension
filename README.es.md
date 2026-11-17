@@ -134,3 +134,7 @@ El servidor vive en el repo del bot ([`decatrondev/decatron`](https://github.com
 `TranslationHub`, `LiveTranslationController`, `PublicEmotesController` y el catálogo de emotes. Guías de uso:
 <https://decatron.net/docs/translation> (página de la extensión para espectadores) y <https://decatron.net/docs/chat>
 (emotes).
+
+## Licencia
+
+GNU Affero General Public License v3.0. Ver [LICENSE](LICENSE).
